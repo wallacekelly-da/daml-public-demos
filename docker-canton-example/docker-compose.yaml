@@ -10,6 +10,7 @@ services:
       - 5018
       - 5019
     ports:
+      - 5018:5018
       - 5019:5019
 
   participant1:

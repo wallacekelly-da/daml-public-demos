@@ -1,2 +1,4 @@
 .vscode
 .metals
+log/
+ui-backend-*.conf

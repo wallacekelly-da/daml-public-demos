@@ -14,7 +14,7 @@ While working through that example I wondered, "What would it take to setup this
 
 This article shows what I did to set that up. This is strictly for experimentation on your local machine, not for production purposes.
 
-## Source Files
+## Launch the containers
 
 1. Create three configuration files (one for each of the Canton applications.)
 
@@ -120,6 +120,7 @@ This article shows what I did to set that up. This is strictly for experimentati
             - 5018
             - 5019
           ports:
+            - 5018:5018
             - 5019:5019
 
         participant1:
@@ -151,21 +152,60 @@ This article shows what I did to set that up. This is strictly for experimentati
 
       </details>
 
+1. Launch Docker Desktop and run `docker compose up --detach`.
 
+![](containers.png)
 
-## Docker Compose command line
+## Connect with Canton Console
 
-Start the domain and two participants  
-`docker compose up --detach`
+1. Create a remote.conf file for the three nodes.
 
-Start a Canton Console  
-`docker compose run --rm admin`
+   * <details><summary>remote.conf</summary>
 
-Shutdown the services  
-`docker compose down`
+      ```
+        canton {
+          remote-domains {
+            mydomain {
+              admin-api {
+                address = "localhost"
+                port = "5019"
+              }
+              public-api {
+                address = "localhost"
+                port = "5018"
+              }
+            }
+          }
+          remote-participants {
+            participant1 {
+              admin-api {
+                address = "localhost"
+                port = "5012"
+              }
+              ledger-api {
+                address = "localhost"
+                port = "5011"
+              }
+            }
+            participant2 {
+              admin-api {
+                address = "localhost"
+                port = "5022"
+              }
+              ledger-api {
+                address = "localhost"
+                port = "5021"
+              }
+            }
+          }
+        }
+      ```
+      </details>
 
-## Navigator command line
+1. Start the Canton Console, with `daml canton-console -c remote.conf`.
+1. Test the connectivity with `participant1.health.ping(participant2)`.
+1. Confirm the parties were created with `participant1.parties.list("Alice")`.
 
-`daml navigator server localhost 5011 -c ui-backend-participant1.conf --port 4011`
+## Connect with Navigator
 
-`daml navigator server localhost 5021 -c ui-backend-participant2.conf --port 4021`
+TODO

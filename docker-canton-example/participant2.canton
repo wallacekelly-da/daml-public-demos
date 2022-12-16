@@ -1,3 +1,4 @@
+nodes.local.start()
 participant2.domains.connect("mydomain", "http://mydomain:5018")
 participant2.dars.upload("dars/CantonExamples.dar")
 participant2.parties.enable("Bob", waitForDomain=DomainChoice.All)
