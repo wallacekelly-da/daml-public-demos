@@ -1,0 +1,39 @@
+services: 
+
+  mydomain:
+    image: digitalasset/canton-open-source:2.5.0
+    volumes:
+      - ./:/canton/host/:rw
+    entrypoint: bin/canton
+    command: daemon --config "host/mydomain.conf" --log-profile container
+    expose:
+      - 5018
+      - 5019
+    ports:
+      - 5019:5019
+
+  participant1:
+    image: digitalasset/canton-open-source:2.5.0
+    volumes:
+      - ./:/canton/host/:rw
+    entrypoint: bin/canton
+    command: daemon --config "host/participant1.conf" --bootstrap "host/participant1.canton" --log-profile container
+    expose:
+      - 5011
+      - 5012
+    ports:
+      - 5011:5011
+      - 5012:5012
+
+  participant2:
+    image: digitalasset/canton-open-source:2.5.0
+    volumes:
+      - ./:/canton/host/:rw
+    entrypoint: bin/canton
+    command: daemon --config "host/participant2.conf" --bootstrap "host/participant2.canton" --log-profile container
+    expose:
+      - 5021
+      - 5022
+    ports:
+      - 5021:5021
+      - 5022:5022

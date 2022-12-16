@@ -1,0 +1,4 @@
+participant1.domains.connect("mydomain", "http://mydomain:5018")
+participant1.dars.upload("dars/CantonExamples.dar")
+participant1.parties.enable("Alice", waitForDomain=DomainChoice.All)
+utils.generate_navigator_conf(participant1, Some("./host/ui-backend-participant1.conf"))
