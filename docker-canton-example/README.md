@@ -80,6 +80,7 @@ This article shows what I did to set that up. This is strictly for experimentati
    * <details><summary>participant1.canton</summary>
      
      ```
+      nodes.local.start()
       participant1.domains.connect("mydomain", "http://mydomain:5018")
       participant1.dars.upload("dars/CantonExamples.dar")
       participant1.parties.enable("Alice", waitForDomain=DomainChoice.All)
@@ -90,6 +91,7 @@ This article shows what I did to set that up. This is strictly for experimentati
    * <details><summary>participant2.canton</summary>
      
      ```
+      nodes.local.start()
       participant2.domains.connect("mydomain", "http://mydomain:5018")
       participant2.dars.upload("dars/CantonExamples.dar")
       participant2.parties.enable("Bob", waitForDomain=DomainChoice.All)
@@ -148,7 +150,7 @@ This article shows what I did to set that up. This is strictly for experimentati
           ports:
             - 5021:5021
             - 5022:5022
-            ```
+      ```
 
       </details>
 
@@ -204,7 +206,7 @@ This article shows what I did to set that up. This is strictly for experimentati
 
 1. Start the Canton Console, with `daml canton-console -c remote.conf`.
 1. Test the connectivity with `participant1.health.ping(participant2)`.
-1. Confirm the parties were created with `participant1.parties.list("Alice")`.
+1. Confirm the parties were created with `participant1.parties.list("Bob")`.
 
 ## Connect with Navigator
 
