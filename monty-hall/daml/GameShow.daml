@@ -1,0 +1,94 @@
+module GameShow where
+
+import Daml.Script
+import DA.List
+import DA.Optional
+
+import Door
+import PlayersTurn
+import HostsTurn
+import GameOver
+
+type GameShowId = ContractId GameShow
+
+template GameShow
+  with
+    host : Party
+    gameShowUid : Text
+    player : Party
+    winningDoor : Int
+    doorCount : Int
+  where
+    signatory host
+    ensure
+      doorCount >= 3
+      && winningDoor >= 1
+      && winningDoor <= doorCount
+    key (host, gameShowUid) : (Party, Text)
+    maintainer key._1
+
+    nonconsuming choice StartGame : PlayersTurnId
+      controller host
+      do
+        doors <- createDoors host gameShowUid doorCount winningDoor
+        create PlayersTurn with
+          count = 1
+          selectedDoor = None
+          ..
+    
+    nonconsuming choice TakeHostsTurn : Either PlayersTurnId GameOverId
+      with
+        respondTo : HostsTurnId
+        openDoorNumber : Int
+      controller host
+      do
+        -- open a door
+        hostsTurn <- fetch respondTo
+        (openedDoorId, openedDoor) <- fetchByKey @Door (host, gameShowUid, openDoorNumber)
+        newlyOpenedDoorId <- exercise openedDoorId Open with player
+
+        -- get the selected door
+        (selectedDoorId, selectedDoor) <- fetchByKey @Door (host, gameShowUid, hostsTurn.selectDoor)
+        let doorIds = replace [openedDoorId] [newlyOpenedDoorId] hostsTurn.doors
+        exercise respondTo Complete 
+
+        -- any more options to switch?
+        doors <- forA doorIds fetch
+        let closedDoors = length(filter (\d -> isNone d.visibleTo) doors)
+
+        let isGameOver =
+              isSome selectedDoor.visibleTo
+              || openedDoor.prize == Car
+              || closedDoors <= 1
+
+        if not isGameOver
+        then 
+          Left <$> create PlayersTurn with
+            count = hostsTurn.count + 1
+            selectedDoor = Some hostsTurn.selectDoor
+            doors = doorIds
+            ..
+        else
+          --todo: open remaining closed doors
+          --todo: make everything visible to player
+          Right <$> create GameOver with
+            prize = selectedDoor.prize
+            selectedDoor = hostsTurn.selectDoor
+            doors = doorIds
+            ..
+
+game = script do
+  let gameShowUid = "testing"
+      winningDoor = 1
+      doorCount = 3
+  host <- allocatePartyWithHint "Monty" (PartyIdHint "Monty")
+  player <- allocatePartyWithHint "Suzie" (PartyIdHint "Suzie")
+
+  gameShow <- submit host do createCmd GameShow with ..
+  playersTurn1 <- submit host do exerciseCmd gameShow StartGame 
+  hostsTurn1 <- submit player do exerciseCmd playersTurn1 SelectDoor with newSelectedDoor = 2
+  Left playersTurn2 <- submit host do exerciseCmd gameShow TakeHostsTurn with respondTo = hostsTurn1, openDoorNumber = 3
+  hostsTurn2 <- submit player do exerciseCmd playersTurn2 SelectDoor with newSelectedDoor = 1
+  Right playersTurn3 <- submit host do exerciseCmd gameShow TakeHostsTurn with respondTo = hostsTurn2, openDoorNumber = 1
+  
+  return ()

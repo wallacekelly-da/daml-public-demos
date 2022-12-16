@@ -1,0 +1,34 @@
+module PlayersTurn where
+
+import Door
+import DA.Optional
+import HostsTurn
+
+type PlayersTurnId = ContractId PlayersTurn
+
+template PlayersTurn
+  with
+    host : Party
+    gameShowUid : Text
+    count : Int
+    player : Party
+    doors : [DoorId]
+    selectedDoor : Optional Int
+  where
+    signatory host
+    observer player
+    key (host, gameShowUid, count) : (Party, Text, Int)
+    maintainer key._1
+    ensure 
+      isNone selectedDoor
+      || (fromSome selectedDoor >= 1
+          && fromSome selectedDoor <= length doors)
+
+    choice SelectDoor : HostsTurnId
+      with
+        newSelectedDoor : Int
+      controller player
+        do
+          create HostsTurn with
+            selectDoor = newSelectedDoor
+            ..

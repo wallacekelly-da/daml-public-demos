@@ -1,0 +1,106 @@
+module DoorTests where
+
+import Daml.Script
+import DA.Assert
+
+import Door
+
+can_create_closed_door = script do
+  host <- allocateParty "host"
+  let gameShowUid = "testing"
+      number = 2
+      visibleTo = None
+      prize = Goat
+  _ <- submit host do createCmd Door with ..
+  Some(doorId, door) <- queryContractKey @Door host (host, gameShowUid, number)
+  door.gameShowUid === gameShowUid
+  door.number === number
+  door.visibleTo === None
+  door.prize === prize 
+  submit host do archiveCmd doorId -- to achieve 100% test coverage
+
+cannot_create_duplicate_doors = script do
+  let gameShowUid = "testing"
+      number = 2
+      visibleTo = None
+  host <- allocateParty "host"
+  door1 <- submit host do createCmd Door with prize = Car, ..
+  submitMustFail host do createCmd Door with prize = Goat, ..
+  submit host do archiveCmd door1
+
+host_can_open_door = script do
+  let gameShowUid = "testing"
+      number = 2
+      prize = Goat
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  closed_door <- submit host do
+    createCmd Door with visibleTo = None, ..
+  opened_door <- submit host do
+    exerciseCmd closed_door Open with player
+  Some (doorId, door) <- queryContractKey @Door player (host, gameShowUid, number)
+  door.visibleTo === Some player
+  door.gameShowUid === gameShowUid
+  door.number === number
+  door.prize === prize 
+  submit host do archiveCmd doorId
+
+player_cannot_open_door = script do
+  let gameShowUid = "testing"
+      number = 2
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  closed_door <- submit host do
+    createCmd Door with
+      visibleTo = None
+      prize = Goat
+      ..
+  submitMustFail player do
+    exerciseCmd closed_door Open with player
+  submit host do archiveCmd closed_door
+
+cannot_open_an_open_door = script do
+  let gameShowUid = "testing"
+      number = 2
+      prize = Goat
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  closed_door <- submit host do
+    createCmd Door with visibleTo = None, ..
+  opened_door <- submit host do
+    exerciseCmd closed_door Open with player
+  submitMustFail host do
+    exerciseCmd opened_door Open with player
+  submit host do archiveCmd opened_door
+
+template DoorUtilityFunctions -- for testing utility functions
+  with
+    host : Party
+  where
+    signatory host
+    nonconsuming choice CreateDoors : [DoorId]
+      with
+        gameShowUid : Text
+        doorCount : Int
+        winningDoor : Int
+      controller host
+      do createDoors host gameShowUid doorCount winningDoor
+
+createDoors_adds_one_and_only_one_car = script do
+  let gameShowUid = "testing"
+      doorCount = 3
+      winningDoor = 2
+  host <- allocateParty "host"
+  -- todo: use createAndExerciseCmd
+  doorCreator <- submit host do createCmd DoorUtilityFunctions with ..
+  doors <- submit host do exerciseCmd doorCreator CreateDoors with ..
+  Some (door1Id, door1) <- queryContractKey @Door host (host, gameShowUid, 1)
+  Some (door2Id, door2) <- queryContractKey @Door host (host, gameShowUid, 2)
+  Some (door3Id, door3) <- queryContractKey @Door host (host, gameShowUid, 3)
+  door1.prize === Goat
+  door2.prize === Car
+  door3.prize === Goat
+  submit host do archiveCmd doorCreator -- to achieve 100% test coverage
+  submit host do archiveCmd door1Id
+  submit host do archiveCmd door2Id
+  submit host do archiveCmd door3Id

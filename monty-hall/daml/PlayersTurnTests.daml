@@ -1,0 +1,104 @@
+module PlayersTurnTests where
+
+import Daml.Script
+import DA.Assert
+import DA.Foldable
+import DoorTests
+import PlayersTurn
+import HostsTurn
+
+can_create_playersturn = script do
+  let gameShowUid = "testing"
+      count = 1
+      selectedDoor = None 
+      doorCount = 3
+      winningDoor = 2
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  doorCreator <- submit host do createCmd DoorUtilityFunctions with ..
+  doors <- submit host do exerciseCmd doorCreator CreateDoors with ..
+  _ <- submit host do createCmd PlayersTurn with ..
+  Some (playersTurnId, playersTurn) <-
+    queryContractKey @PlayersTurn player (host, gameShowUid, count)
+  playersTurn.doors === doors 
+  playersTurn.selectedDoor === selectedDoor
+  -- clean up
+  submit host do archiveCmd doorCreator
+  submit host do archiveCmd playersTurnId
+  forA_ doors do (\d -> submit host do archiveCmd d)
+
+cannot_create_duplicate_playersturn = script do
+  let gameShowUid = "testing"
+      count = 1
+      selectedDoor = None 
+      doorCount = 3
+      winningDoor = 2
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  doorCreator <- submit host do createCmd DoorUtilityFunctions with ..
+  doors <- submit host do exerciseCmd doorCreator CreateDoors with ..
+  playersTurn <- submit host do createCmd PlayersTurn with ..
+  _ <- submitMustFail host do createCmd PlayersTurn with selectedDoor = Some 1, ..
+  -- clean up
+  submit host do archiveCmd doorCreator
+  submit host do archiveCmd playersTurn
+  forA_ doors do (\d -> submit host do archiveCmd d)
+
+cannot_set_nonexistent_selecteddoor = script do
+  let gameShowUid = "testing"
+      count = 1
+      doorCount = 3
+      winningDoor = 2
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  doorCreator <- submit host do createCmd DoorUtilityFunctions with ..
+  doors <- submit host do exerciseCmd doorCreator CreateDoors with ..
+  _ <- submitMustFail host do createCmd PlayersTurn with selectedDoor = Some 0, ..
+  _ <- submitMustFail host do createCmd PlayersTurn with selectedDoor = Some 4, ..
+  -- clean up
+  submit host do archiveCmd doorCreator
+  forA_ doors do (\d -> submit host do archiveCmd d)
+
+can_selectdoor = script do
+  let gameShowUid = "testing"
+      count = 1
+      selectedDoor = None
+      doorCount = 3
+      winningDoor = 2
+      newSelectedDoor = 2
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  doorCreator <- submit host do createCmd DoorUtilityFunctions with ..
+  doors <- submit host do exerciseCmd doorCreator CreateDoors with ..
+  playersTurn <- submit host do createCmd PlayersTurn with ..
+  _ <- submit player do exerciseCmd playersTurn SelectDoor with ..
+  Some (hostsTurnId, hostsTurn) <-
+    queryContractKey @HostsTurn host (host, gameShowUid, count)
+  hostsTurn.doors === doors
+  hostsTurn.selectDoor === newSelectedDoor
+  -- clean up
+  submit host do archiveCmd doorCreator
+  forA_ doors do (\d -> submit host do archiveCmd d)
+  submitMulti [host, player] [] do archiveCmd hostsTurnId
+
+cannot_selectdoor_nonexistent = script do
+  let gameShowUid = "testing"
+      count = 1
+      selectedDoor = None
+      doorCount = 3
+      winningDoor = 2
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  doorCreator <- submit host do createCmd DoorUtilityFunctions with ..
+  doors <- submit host do exerciseCmd doorCreator CreateDoors with ..
+  playersTurn <- submit host do createCmd PlayersTurn with ..
+  _ <- submitMustFail player do
+        exerciseCmd playersTurn SelectDoor
+          with newSelectedDoor = 0, ..
+  _ <- submitMustFail player do
+        exerciseCmd playersTurn SelectDoor
+          with newSelectedDoor = 4, ..
+  -- clean up
+  submit host do archiveCmd doorCreator
+  forA_ doors do (\d -> submit host do archiveCmd d)
+  submit host do archiveCmd playersTurn

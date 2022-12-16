@@ -1,0 +1,56 @@
+module Door where
+
+import DA.Assert
+
+data Prize = Goat | Car deriving (Show, Eq)
+
+type DoorId = ContractId Door
+
+-- todo: try having both open and closed doors,
+-- with an interface (for the array of doors)
+
+template Door
+  with
+    host : Party
+    gameShowUid : Text
+    number : Int
+    visibleTo : Optional Party
+    prize : Prize
+  where
+    signatory host
+    observer visibleTo
+    key (host, gameShowUid, number) : (Party, Text, Int)
+    maintainer key._1
+
+    choice Open : DoorId
+      with player : Party
+      controller host
+      do
+        visibleTo === None
+        create this with visibleTo = Some player
+
+-- Utility functions
+
+-- todo: maybe move these into an admin template
+-- and enforce that these functions must be used
+-- to create the doors for a GameShow
+
+createDoor : Party -> Text -> Int -> Int -> Update DoorId
+createDoor host gameShowUid winningDoorNumber number = do
+  let prize
+        | number == winningDoorNumber = Car
+        | otherwise = Goat
+  create Door with visibleTo = None, ..
+
+createDoorsRec : Party -> Text -> Int -> Int -> [DoorId] -> Update [DoorId]
+createDoorsRec host gameShowUid remainingCount winningDoor doors = do
+  if remainingCount == 0
+  then return doors
+  else do
+    let newDoorNumber = length doors + 1
+    newDoor <- createDoor host gameShowUid winningDoor newDoorNumber
+    createDoorsRec host gameShowUid (remainingCount - 1) winningDoor (newDoor :: doors)
+
+createDoors : Party -> Text -> Int -> Int -> Update [DoorId]
+createDoors host gameShowUid doorCount winningDoor =
+  createDoorsRec host gameShowUid doorCount winningDoor []

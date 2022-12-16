@@ -1,0 +1,26 @@
+module HostsTurn where
+
+import Door
+
+type HostsTurnId = ContractId HostsTurn
+
+template HostsTurn
+  with
+    host : Party
+    gameShowUid : Text
+    player : Party
+    doors : [DoorId]
+    selectDoor : Int
+    count : Int
+  where
+    signatory host, player
+    key (host, gameShowUid, count) : (Party, Text, Int)
+    maintainer key._1
+    ensure
+      selectDoor >= 1
+      && selectDoor <= length doors
+      && host /= player
+
+    choice Complete : ()
+      controller host
+      do return ()
