@@ -6,9 +6,9 @@ The Canton documentation includes [a Canton Getting Started example]() with the 
 
 ![](topology1.png)
 
-Notice that the two participants and the domain are running in the same Canton instance. Also notice that the Canton instance is running directly on the host computer.
+Notice that the two participants and the domain are running in the same Canton instance. Also notice that the Canton App is running directly on the host computer.
 
-While working through that example I wondered, "What would it take to setup this example within three Docker containers launched with Docker Compose?" Here is that same example with each participant running in its own container:
+While working through that example I wondered, "What would it take to setup this example within three Docker containers?" The following diagram illustrates that same example with each participant running in its own separate Docker container:
 
 ![](topology2.png)
 
@@ -16,7 +16,7 @@ This article shows what I did to set that up. This is strictly for experimentati
 
 ## Launch the containers
 
-1. Create three configuration files (one for each of the Canton applications.)
+1. Create three Canton configuration files (one for each of the Canton applications.)
 
    * Use `0.0.0.0` for the address binding (to play nicely with the Docker networking)
 
@@ -71,7 +71,7 @@ This article shows what I did to set that up. This is strictly for experimentati
       ```
       </details>
 
-1. Create two bootstrap files (one for each of the Canton participants.)
+1. Create two Canton bootstrap files (one for each of the Canton participants.) Each bootstrap file should do the following:
    * Connect the participants to the domain.
    * Upload the DAR (which is already included in the Canton Open Source image.)
    * Enable the parties for the participants.
@@ -154,7 +154,7 @@ This article shows what I did to set that up. This is strictly for experimentati
 
       </details>
 
-1. Launch Docker Desktop and run `docker compose up --detach`.
+1. Launch Docker Desktop and run `docker compose up --detach`. The three running containers will look something like the following within the Docker Desktop window:
 
 ![](containers.png)
 
@@ -204,9 +204,9 @@ This article shows what I did to set that up. This is strictly for experimentati
       ```
       </details>
 
-1. Start the Canton Console, with `daml canton-console -c remote.conf`.
-1. Test the connectivity with `participant1.health.ping(participant2)`.
-1. Confirm the parties were created with `participant1.parties.list("Bob")`.
+1. From the host machine, start a Canton Console, with `daml canton-console -c remote.conf`.
+1. In the Canton Console, test the connectivity with `participant1.health.ping(participant2)`.
+1. In the Canton Console, confirm the parties were created with `participant1.parties.list("Bob")`.
 
 ## Connect with Navigator
 
