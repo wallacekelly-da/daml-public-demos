@@ -210,4 +210,11 @@ This article shows what I did to set that up. This is strictly for experimentati
 
 ## Connect with Navigator
 
-TODO
+1. From the host machine, start an instance of Navigator for Participant 1.  
+   `daml navigator server localhost 5011 --port 4000 --config-file ui-backend-participant1.conf --feature-user-management false`
+1. From the host machine, start an instance of Navigator for Participant 2.  
+   `daml navigator server localhost 5021 --port 4001 --config-file ui-backend-participant2.conf --feature-user-management false`
+1. In the Canton Console, get the party id for Alice.  
+   `mydomain.parties.list("Alice").head.party.toProtoPrimitive`
+1. In Navigator, log in as the bank and issue an IOU to Alice.
+1. In Navigator, log in as Alice and see the issued IOU.
