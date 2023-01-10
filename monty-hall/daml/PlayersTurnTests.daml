@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 module PlayersTurnTests where
 
 import Daml.Script
@@ -23,8 +24,10 @@ can_create_playersturn = script do
   playersTurn.doors === doors 
   playersTurn.selectedDoor === selectedDoor
   -- clean up
-  submit host do archiveCmd doorCreator
-  submit host do archiveCmd playersTurnId
+  submit host do
+    archiveCmd doorCreator
+    archiveCmd playersTurnId
+    return ()
   forA_ doors do (\d -> submit host do archiveCmd d)
 
 cannot_create_duplicate_playersturn = script do
@@ -40,8 +43,10 @@ cannot_create_duplicate_playersturn = script do
   playersTurn <- submit host do createCmd PlayersTurn with ..
   _ <- submitMustFail host do createCmd PlayersTurn with selectedDoor = Some 1, ..
   -- clean up
-  submit host do archiveCmd doorCreator
-  submit host do archiveCmd playersTurn
+  submit host do
+    archiveCmd doorCreator
+    archiveCmd playersTurn
+    return ()
   forA_ doors do (\d -> submit host do archiveCmd d)
 
 cannot_set_nonexistent_selecteddoor = script do
@@ -99,6 +104,8 @@ cannot_selectdoor_nonexistent = script do
         exerciseCmd playersTurn SelectDoor
           with newSelectedDoor = 4, ..
   -- clean up
-  submit host do archiveCmd doorCreator
+  submit host do
+    archiveCmd doorCreator
+    archiveCmd playersTurn
+    return ()
   forA_ doors do (\d -> submit host do archiveCmd d)
-  submit host do archiveCmd playersTurn

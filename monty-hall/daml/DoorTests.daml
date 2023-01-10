@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 module DoorTests where
 
 import Daml.Script
@@ -100,7 +101,10 @@ createDoors_adds_one_and_only_one_car = script do
   door1.prize === Goat
   door2.prize === Car
   door3.prize === Goat
-  submit host do archiveCmd doorCreator -- to achieve 100% test coverage
-  submit host do archiveCmd door1Id
-  submit host do archiveCmd door2Id
-  submit host do archiveCmd door3Id
+  -- to achieve 100% test coverage
+  submit host do
+    archiveCmd doorCreator
+    archiveCmd door1Id
+    archiveCmd door2Id
+    archiveCmd door3Id
+    return ()

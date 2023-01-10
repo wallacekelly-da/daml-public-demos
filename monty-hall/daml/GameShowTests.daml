@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 module GameShowTests where
 
 import Daml.Script
@@ -63,8 +64,10 @@ started_games_have_the_correct_winning_door = script do
         then door.prize === Car
         else door.prize === Goat)
   forA_ playersTurn.doors do (\d -> submit host do archiveCmd d) 
-  submit host do archiveCmd playersTurnId
-  submit host do archiveCmd gameShow
+  submit host do
+    archiveCmd playersTurnId
+    archiveCmd gameShow
+    return ()
 
 player_cannot_view_gameshow = script do
   let gameShowUid = "testing"
@@ -93,8 +96,10 @@ player_cannot_view_doors = script do
         door <- queryContractId @Door player d
         door === None)
   forA_ playersTurn.doors do (\d -> submit host do archiveCmd d) 
-  submit host do archiveCmd playersTurnId
-  submit host do archiveCmd gameShow
+  submit host do
+    archiveCmd playersTurnId
+    archiveCmd gameShow
+    return ()
 
 game_ends_if_the_players_door_is_opened = script do
   let gameShowUid = "testing"
@@ -110,8 +115,10 @@ game_ends_if_the_players_door_is_opened = script do
 
   doors <- query @Door host
   forA_ doors do (\d -> submit host do archiveCmd (fst d)) 
-  submit host do archiveCmd gameShow
-  submit host do archiveCmd gameOver
+  submit host do
+    archiveCmd gameShow
+    archiveCmd gameOver
+    return ()
 
 game_ends_if_the_player_can_no_longer_switch = script do
   let gameShowUid = "testing"
@@ -132,8 +139,10 @@ game_ends_if_the_player_can_no_longer_switch = script do
 
   doors <- query @Door host
   forA_ doors do (\d -> submit host do archiveCmd (fst d)) 
-  submit host do archiveCmd gameShow
-  submit host do archiveCmd gameOver
+  submit host do
+    archiveCmd gameShow
+    archiveCmd gameOver
+    return ()
 
 -- todo: model open and closed doors differently
 --       to support this requirement

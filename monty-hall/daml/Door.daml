@@ -37,20 +37,9 @@ template Door
 
 createDoor : Party -> Text -> Int -> Int -> Update DoorId
 createDoor host gameShowUid winningDoorNumber number = do
-  let prize
-        | number == winningDoorNumber = Car
-        | otherwise = Goat
+  let prize = if number == winningDoorNumber then Car else Goat
   create Door with visibleTo = None, ..
-
-createDoorsRec : Party -> Text -> Int -> Int -> [DoorId] -> Update [DoorId]
-createDoorsRec host gameShowUid remainingCount winningDoor doors = do
-  if remainingCount == 0
-  then return doors
-  else do
-    let newDoorNumber = length doors + 1
-    newDoor <- createDoor host gameShowUid winningDoor newDoorNumber
-    createDoorsRec host gameShowUid (remainingCount - 1) winningDoor (newDoor :: doors)
 
 createDoors : Party -> Text -> Int -> Int -> Update [DoorId]
 createDoors host gameShowUid doorCount winningDoor =
-  createDoorsRec host gameShowUid doorCount winningDoor []
+  forA [1 .. doorCount] $ createDoor host gameShowUid winningDoor

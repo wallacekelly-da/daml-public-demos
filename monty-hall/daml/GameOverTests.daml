@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 module GameOverTests where
 
 import Daml.Script
@@ -23,8 +24,11 @@ can_create_gameover = script do
   gameOver.selectedDoor === selectedDoor
   gameOver.doors === doors 
   -- clean up
-  submit host do archiveCmd doorCreator
-  submit host do archiveCmd gameOverId
+  submit host do
+    archiveCmd doorCreator
+    archiveCmd gameOverId
+    return ()
+  -- submit host do archiveCmd gameOverId
   forA_ doors do (\d -> submit host do archiveCmd d)
 
 cannot_create_duplicate_gameover = script do
@@ -40,8 +44,10 @@ cannot_create_duplicate_gameover = script do
   gameOver <- submit host do createCmd GameOver with ..
   _ <- submitMustFail host do createCmd GameOver with prize = Goat, ..
   -- clean up
-  submit host do archiveCmd doorCreator
-  submit host do archiveCmd gameOver
+  submit host do
+    archiveCmd doorCreator
+    archiveCmd gameOver
+    return ()
   forA_ doors do (\d -> submit host do archiveCmd d)
 
 cannot_set_selecteddoor_nonexistent = script do

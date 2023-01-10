@@ -1,6 +1,5 @@
 module GameShow where
 
-import Daml.Script
 import DA.List
 import DA.Optional
 
@@ -61,14 +60,8 @@ template GameShow
               || openedDoor.prize == Car
               || closedDoors <= 1
 
-        if not isGameOver
+        if isGameOver
         then 
-          Left <$> create PlayersTurn with
-            count = hostsTurn.count + 1
-            selectedDoor = Some hostsTurn.selectDoor
-            doors = doorIds
-            ..
-        else
           --todo: open remaining closed doors
           --todo: make everything visible to player
           Right <$> create GameOver with
@@ -76,19 +69,10 @@ template GameShow
             selectedDoor = hostsTurn.selectDoor
             doors = doorIds
             ..
-
-game = script do
-  let gameShowUid = "testing"
-      winningDoor = 1
-      doorCount = 3
-  host <- allocatePartyWithHint "Monty" (PartyIdHint "Monty")
-  player <- allocatePartyWithHint "Suzie" (PartyIdHint "Suzie")
-
-  gameShow <- submit host do createCmd GameShow with ..
-  playersTurn1 <- submit host do exerciseCmd gameShow StartGame 
-  hostsTurn1 <- submit player do exerciseCmd playersTurn1 SelectDoor with newSelectedDoor = 2
-  Left playersTurn2 <- submit host do exerciseCmd gameShow TakeHostsTurn with respondTo = hostsTurn1, openDoorNumber = 3
-  hostsTurn2 <- submit player do exerciseCmd playersTurn2 SelectDoor with newSelectedDoor = 1
-  Right playersTurn3 <- submit host do exerciseCmd gameShow TakeHostsTurn with respondTo = hostsTurn2, openDoorNumber = 1
+        else
+          Left <$> create PlayersTurn with
+            count = hostsTurn.count + 1
+            selectedDoor = Some hostsTurn.selectDoor
+            doors = doorIds
+            ..
   
-  return ()
