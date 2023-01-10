@@ -19,6 +19,8 @@ services:
       - ./:/canton/host/:rw
     entrypoint: bin/canton
     command: daemon --config "host/participant1.conf" --bootstrap "host/participant1.canton" --log-profile container
+    depends_on:
+      - mydomain
     expose:
       - 5011
       - 5012
@@ -32,6 +34,8 @@ services:
       - ./:/canton/host/:rw
     entrypoint: bin/canton
     command: daemon --config "host/participant2.conf" --bootstrap "host/participant2.canton" --log-profile container
+    depends_on:
+      - mydomain
     expose:
       - 5021
       - 5022
