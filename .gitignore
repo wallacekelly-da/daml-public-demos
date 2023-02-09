@@ -1,1 +1,9 @@
 .DS_Store
+create-daml-app/
+node_modules/
+LoansJS/Loans
+log/
+daml.js/
+Loans/parties.json
+.daml/
+navigator.log
