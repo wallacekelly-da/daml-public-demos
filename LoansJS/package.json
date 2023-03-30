@@ -1,0 +1,19 @@
+{
+  "name": "loansjs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "@daml.js/loans": "file:daml.js/Loans-1.0.0",
+    "@daml/ledger": "^2.6.0",
+    "@daml/types": "^2.6.0",
+    "lodash": "^4.17.21"
+  },
+  "scripts": {
+    "codegen": "daml codegen js ../Loans/.daml/dist/Loans-1.0.0.dar -o daml.js",
+    "start": "node --experimental-specifier-resolution=node index.js"
+  },
+  "author": "",
+  "license": "ISC"
+}

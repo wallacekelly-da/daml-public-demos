@@ -1,0 +1,28 @@
+module Main where
+
+import Daml.Script
+
+import Loans
+
+getOrAllocateParty : Text -> Script Party
+getOrAllocateParty name = script do
+  p <- find (\d -> d.displayName == Some name) <$> listKnownParties
+  case p of 
+    None -> do allocatePartyWithHint name (PartyIdHint name)
+    Some d -> pure d.party
+
+data Parties = Parties with
+  lender : Party
+  borrower : Party
+
+setup : Script Parties
+setup = script do
+  lender <- getOrAllocateParty "Lender"
+  borrower <- getOrAllocateParty "Borrower"
+
+  created <- getTime
+  let amount = "1000"
+      rate = "0.04"
+  loan <- submit lender do
+            createCmd Loan with ..
+  pure (Parties with lender, borrower)
