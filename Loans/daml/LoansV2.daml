@@ -1,4 +1,4 @@
-module Loans where
+module LoansV2 where
 
 template Loan with
     lender : Party

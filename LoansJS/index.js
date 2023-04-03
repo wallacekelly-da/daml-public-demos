@@ -6,7 +6,7 @@ const ledger = new Ledger.default({
   httpBaseUrl: "http://127.0.0.1:8080/"
 });
 
-const loans = await ledger.query(Loans.Loans.Loan);
+const loans = await ledger.query(Loans.LoansV2.Loan);
 
 console.log("---------")
 console.log("Loan count: " + loans.length);

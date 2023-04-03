@@ -2,7 +2,7 @@ module Main where
 
 import Daml.Script
 
-import Loans
+import LoansV2
 
 getOrAllocateParty : Text -> Script Party
 getOrAllocateParty name = script do
