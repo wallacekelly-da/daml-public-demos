@@ -2,7 +2,7 @@ module Main where
 
 import Daml.Script
 
-import LoansV2
+import LoansV3
 
 getOrAllocateParty : Text -> Script Party
 getOrAllocateParty name = script do
@@ -21,8 +21,11 @@ setup = script do
   borrower <- getOrAllocateParty "Borrower"
 
   created <- getTime
-  let amount = 2000.0
-      rate = 0.05
+  let amount = 3000.0
+      rate = 0.06
+      dayBasis = Actual_365
+
   loan <- submit lender do
             createCmd Loan with ..
+
   pure (Parties with lender, borrower)
