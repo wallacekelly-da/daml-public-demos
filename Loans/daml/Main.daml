@@ -21,8 +21,8 @@ setup = script do
   borrower <- getOrAllocateParty "Borrower"
 
   created <- getTime
-  let amount = "1000"
-      rate = "0.04"
+  let amount = 2000.0
+      rate = 0.05
   loan <- submit lender do
             createCmd Loan with ..
   pure (Parties with lender, borrower)
