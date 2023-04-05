@@ -1,0 +1,82 @@
+module Loans where
+
+import DA.Assert
+import DA.Optional
+
+type LoanId = ContractId Loan
+type RolloverNoticeId = ContractId RolloverNotice
+type RolloverNoticeWithRateId = ContractId RolloverNoticeWithRate
+type RolledLoanId = ContractId RolledLoan
+
+template Loan with
+    agent : Party
+    manager : Party
+    amount : Int
+    interestRate : Numeric 2
+  where
+    signatory agent
+    observer manager
+  
+    nonconsuming choice CreateRolloverNotice : Either RolloverNoticeId RolloverNoticeWithRateId
+      with
+        newAmount : Int
+        newInterestRate : Optional (Numeric 2)
+      controller agent
+      do
+        assert (isNone newInterestRate || fromSome newInterestRate > 0.0)
+        if isNone newInterestRate
+        then Left <$> create RolloverNotice with loanId = self,..
+        else Right <$> create RolloverNoticeWithRate with
+              loanId = self
+              newInterestRate = fromSome newInterestRate
+              ..
+
+template RolloverNotice with
+    agent : Party
+    manager : Party
+    loanId : LoanId
+    newAmount : Int
+  where
+    signatory agent
+
+    choice FixRate : RolloverNoticeWithRateId
+      with newInterestRate : Numeric 2
+      controller agent
+      do
+        create RolloverNoticeWithRate with ..
+
+template RolloverNoticeWithRate with
+    agent : Party
+    manager : Party
+    loanId : LoanId
+    newAmount : Int
+    newInterestRate : Numeric 2
+  where
+    signatory agent
+    observer manager
+
+    choice Approve : LoanId
+      controller manager
+      do
+        manager =/= agent
+        priorLoan <- fetch loanId
+        archive loanId
+        newLoan <- create Loan with
+          amount = newAmount
+          interestRate = newInterestRate
+          ..
+        rolledLoan <- create RolledLoan with
+          priorAmount = priorLoan.amount
+          priorInterestRate = priorLoan.interestRate
+          .. 
+        pure newLoan
+
+template RolledLoan with
+    agent : Party
+    manager : Party
+    priorAmount : Int
+    priorInterestRate : Numeric 2
+    newLoan : LoanId
+  where
+    signatory manager
+    observer agent

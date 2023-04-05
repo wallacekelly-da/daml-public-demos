@@ -1,0 +1,71 @@
+module Tests where
+
+import Daml.Script
+import Loans
+
+rollover_without_interest_rate_example = script do
+  agent <- allocateParty "Agent"
+  manager <- allocateParty "Manager"
+  let amount = 1000
+      interestRate = 0.05
+      newAmount = 2000
+  loan <- submit agent $ createCmd Loan with ..
+
+  Left rn <- submit agent do
+          exerciseCmd loan CreateRolloverNotice with  
+            newInterestRate = None, ..
+
+  rnwr <- submit agent do
+            exerciseCmd rn FixRate with
+              newInterestRate = 0.06,..
+  
+  loanB <- submit manager do
+            exerciseCmd rnwr Approve
+  
+  pure ()
+
+rollover_with_interest_rate_example = script do
+  agent <- allocateParty "Agent"
+  manager <- allocateParty "Manager"
+  let amount = 1000
+      interestRate = 0.05
+      newAmount = 2000
+  loan <- submit agent $ createCmd Loan with ..
+
+  Right rnwr <- submit agent do
+          exerciseCmd loan CreateRolloverNotice with  
+            newInterestRate = Some 0.06, ..
+
+  loanB <- submit manager do
+            exerciseCmd rnwr Approve
+  
+  pure ()
+
+new_rate_must_be_positive = script do
+  agent <- allocateParty "Agent"
+  manager <- allocateParty "Manager"
+  let amount = 1000
+      interestRate = 0.05
+      newAmount = 2000
+  loan <- submit agent $ createCmd Loan with ..
+
+  submitMustFail agent do
+    exerciseCmd loan CreateRolloverNotice with  
+      newInterestRate = Some (-0.06), ..
+
+same_party_cannot_approve_rollover = script do
+  agent <- allocateParty "Agent"
+  manager <- allocateParty "Manager"
+  let amount = 1000
+      interestRate = 0.05
+      newAmount = 2000
+
+  loan <- submit agent $ createCmd Loan with
+            manager = agent,..
+
+  Right rnwr <- submit agent do
+          exerciseCmd loan CreateRolloverNotice with  
+            newInterestRate = Some 0.06, ..
+
+  submitMustFail agent do
+    exerciseCmd rnwr Approve
