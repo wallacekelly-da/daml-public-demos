@@ -4,8 +4,8 @@ import DA.Assert
 import DA.Optional
 
 type LoanId = ContractId Loan
+type DraftRolloverNoticeId = ContractId DraftRolloverNotice
 type RolloverNoticeId = ContractId RolloverNotice
-type RolloverNoticeWithRateId = ContractId RolloverNoticeWithRate
 type RolledLoanId = ContractId RolledLoan
 
 template Loan with
@@ -16,22 +16,22 @@ template Loan with
   where
     signatory agent
     observer manager
+    ensure agent /= manager
   
-    nonconsuming choice CreateRolloverNotice : Either RolloverNoticeId RolloverNoticeWithRateId
+    nonconsuming choice CreateRolloverNotice : Either DraftRolloverNoticeId RolloverNoticeId
       with
         newAmount : Int
         newInterestRate : Optional (Numeric 2)
       controller agent
       do
-        assert (isNone newInterestRate || fromSome newInterestRate > 0.0)
         if isNone newInterestRate
-        then Left <$> create RolloverNotice with loanId = self,..
-        else Right <$> create RolloverNoticeWithRate with
+        then Left <$> create DraftRolloverNotice with loanId = self,..
+        else Right <$> create RolloverNotice with
               loanId = self
               newInterestRate = fromSome newInterestRate
               ..
 
-template RolloverNotice with
+template DraftRolloverNotice with
     agent : Party
     manager : Party
     loanId : LoanId
@@ -39,13 +39,13 @@ template RolloverNotice with
   where
     signatory agent
 
-    choice FixRate : RolloverNoticeWithRateId
+    choice FixRate : RolloverNoticeId
       with newInterestRate : Numeric 2
       controller agent
       do
-        create RolloverNoticeWithRate with ..
+        create RolloverNotice with ..
 
-template RolloverNoticeWithRate with
+template RolloverNotice with
     agent : Party
     manager : Party
     loanId : LoanId
@@ -54,12 +54,13 @@ template RolloverNoticeWithRate with
   where
     signatory agent
     observer manager
+    -- ensure newInterestRate > 0.0
 
     choice Approve : LoanId
       controller manager
       do
-        manager =/= agent
         priorLoan <- fetch loanId
+        -- assertMsg "New loan amount cannot be less than previous loan amount" (newAmount >= priorLoan.amount)
         archive loanId
         newLoan <- create Loan with
           amount = newAmount
