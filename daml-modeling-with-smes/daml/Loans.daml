@@ -16,7 +16,6 @@ template Loan with
   where
     signatory agent
     observer manager
-    ensure agent /= manager
   
     nonconsuming choice CreateRolloverNotice : Either DraftRolloverNoticeId RolloverNoticeId
       with
@@ -30,6 +29,7 @@ template Loan with
               loanId = self
               newInterestRate = fromSome newInterestRate
               ..
+
 
 template DraftRolloverNotice with
     agent : Party
@@ -45,6 +45,7 @@ template DraftRolloverNotice with
       do
         create RolloverNotice with ..
 
+
 template RolloverNotice with
     agent : Party
     manager : Party
@@ -54,13 +55,13 @@ template RolloverNotice with
   where
     signatory agent
     observer manager
-    -- ensure newInterestRate > 0.0
+    ensure newInterestRate > 0.0
 
     choice Approve : LoanId
       controller manager
       do
         priorLoan <- fetch loanId
-        -- assertMsg "New loan amount cannot be less than previous loan amount" (newAmount >= priorLoan.amount)
+        assertMsg "New loan amount cannot be less than previous loan amount" (newAmount >= priorLoan.amount)
         archive loanId
         newLoan <- create Loan with
           amount = newAmount
@@ -71,6 +72,7 @@ template RolloverNotice with
           priorInterestRate = priorLoan.interestRate
           .. 
         pure newLoan
+
 
 template RolledLoan with
     agent : Party

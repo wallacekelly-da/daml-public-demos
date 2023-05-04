@@ -25,6 +25,7 @@ draft_rollover_example = script do
   
   pure ()
 
+
 rollover_example : Script ()
 rollover_example = script do
   agent <- allocateParty "Agent"
@@ -43,6 +44,7 @@ rollover_example = script do
   
   pure ()
 
+
 new_rate_must_be_positive : Script ()
 new_rate_must_be_positive = script do
 
@@ -55,11 +57,12 @@ new_rate_must_be_positive = script do
   loan <- submit agent $ createCmd Loan with ..
 
   -- act
-  submit agent do
+  submitMustFail agent do
     exerciseCmd loan CreateRolloverNotice with  
       newInterestRate = Some (-0.06), ..
 
   pure()
+
 
 new_amount_must_not_decrease : Script ()
 new_amount_must_not_decrease = script do
@@ -76,7 +79,7 @@ new_amount_must_not_decrease = script do
   Right rollover <- submit agent do
     exerciseCmd loan CreateRolloverNotice with
       newAmount = amount - 100, ..
-  rollover <- submit manager do
+  rollover <- submitMustFail manager do
     exerciseCmd rollover Approve
 
   pure()
