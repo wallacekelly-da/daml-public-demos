@@ -1,0 +1,23 @@
+module Main where
+
+import Daml.Script
+import DA.Text as T
+
+-- https://discuss.daml.com/t/allocate-party-if-it-doesnt-exists/5575/3?u=wallacekelly
+getOrCreateUserParty : Text -> Script Party
+getOrCreateUserParty alias = do
+  userId <- validateUserId (T.asciiToLower alias)
+  try do
+    User _ (Some party) <- getUser userId
+    pure party
+  catch
+    UserNotFound _ -> do
+      p <- allocatePartyWithHint alias (PartyIdHint alias)
+      createUser (User userId (Some p)) [CanActAs p]
+      pure p
+
+setup : Script ()
+setup = script do
+  host <- getOrCreateUserParty "Host"
+  player <- getOrCreateUserParty "Player"
+  pure ()

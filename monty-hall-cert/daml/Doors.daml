@@ -1,0 +1,21 @@
+module Doors where
+
+data Prize = Goat | Car
+  deriving (Eq, Show)
+
+template Door with
+    gameId : Text
+    host : Party
+    player : Optional Party
+    doorNumber : Int
+    prize : Prize
+  where
+    signatory host
+    observer player
+    key (host, gameId, doorNumber) : (Party, Text, Int)
+    maintainer key._1
+  
+    choice Open : ContractId Door with
+        player : Party
+      controller host
+      do create this with player = Some player
