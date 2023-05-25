@@ -1,8 +1,1 @@
 .DS_Store
-.daml/
-daml.js/
-log/
-node_modules/
-LoansJS/Loans/
-Loans/parties.json
-navigator.log
