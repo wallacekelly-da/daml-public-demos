@@ -1,0 +1,10 @@
+module Loans where
+
+template Loan with
+    lender : Party
+    borrower : Party
+    amount : Text
+    rate : Text
+    created : Time
+  where
+    signatory lender

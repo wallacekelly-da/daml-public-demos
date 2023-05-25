@@ -1,0 +1,35 @@
+module Main where
+
+import Daml.Script
+import DA.Text as T
+
+import Loans
+
+getOrCreateUserParty : Text -> Script Party
+getOrCreateUserParty alias = do
+  userId <- validateUserId (T.asciiToLower alias)
+  try do
+    User _ (Some party) <- getUser userId
+    pure party
+  catch
+    UserNotFound _ -> do
+      p <- allocatePartyWithHint alias (PartyIdHint alias)
+      createUser (User userId (Some p)) [CanActAs p]
+      pure p
+
+
+data Parties = Parties with
+  lender : Party
+  borrower : Party
+
+setup : Script Parties
+setup = script do
+  lender <- getOrCreateUserParty "Lender"
+  borrower <- getOrCreateUserParty "Borrower"
+
+  created <- getTime
+  let amount = "1000"
+      rate = "0.04"
+  loan <- submit lender do
+            createCmd Loan with ..
+  pure (Parties with lender, borrower)
