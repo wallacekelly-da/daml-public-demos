@@ -1,5 +1,9 @@
 # LoansJava
 
+## Building the project
+
+`daml codegen java ../Loans/.daml/dist/Loans-1.0.0.dar --output-directory src/main/java; mvn compile`
+
 ## Running the project
 
 `mvn compile exec:java -Dexec.mainClass=com.digitalasset.App -q`
