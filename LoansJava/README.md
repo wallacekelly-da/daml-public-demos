@@ -2,7 +2,7 @@
 
 ## Building the project
 
-`daml codegen java ../Loans/.daml/dist/Loans-1.0.0.dar --output-directory src/main/java; mvn compile`
+`daml build --project-root ../Loans/; daml codegen java ../Loans/.daml/dist/Loans-1.0.0.dar --output-directory src/main/java; mvn compile`
 
 ## Running the project
 
