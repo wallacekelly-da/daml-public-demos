@@ -2,3 +2,8 @@
 .scalafmt.conf
 .metals
 .daml
+/.vscode
+/log
+navigator.log
+configs/participant-config.json
+configs/*.acs.gz

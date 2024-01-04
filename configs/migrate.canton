@@ -1,0 +1,78 @@
+import com.digitalasset.canton.concurrent.Threading
+
+val logger = consoleEnvironment.environment.loggerFactory.getLogger(this.getClass)
+
+// pauses are likely not required;
+// they are included in this script
+// simply to avoid *unknown* race conditions.
+val pause = () => Thread.sleep(5_000)
+
+participant1.parties.list().find(p => p.party.uid.id == "alice")
+match {
+  case None => logger.error("Cannot find party alice on participant participant1.")
+  case Some(result) =>
+    val alice = result.party
+    logger.info("Found party alice on participant participant1.")
+
+    // preparation
+    val gzipfile = "/canton/host/configs/alice.acs.gz"
+    val mrrp = mydomain.service.get_max_rate_per_participant
+    logger.info("Performing set_max_rate_per_participant.")
+    mydomain.service.set_max_rate_per_participant(0)
+    pause()
+
+    // Domain parameter changes requires a wait until participant and mediator timeouts.
+    logger.info("After configuration changes, wait for participant and mediator timeout (one minute).")
+    Thread.sleep(60_000)
+
+    // migration
+    logger.info("Beginning step1_store_acs.")
+    repair.party_migration.step1_store_acs(
+      participant1, Set(alice), partiesOffboarding = false, gzipfile)
+    pause()
+
+    logger.info("Disconnecting participant2.")
+    participant2.domains.disconnect("mydomain")
+    pause()
+
+    logger.info("Beginning step2_import_acs.")
+    repair.party_migration.step2_import_acs(
+      participant2, Set(alice), gzipfile)
+    pause()
+
+    logger.info("Beginning step3_delegate_party_to_target_node.")
+    repair.party_migration.step3_delegate_party_to_target_node(
+      participant1, Set(alice), participant2.id)
+    pause()
+
+    logger.info("Reconnecting participant2.")
+    participant2.domains.reconnect("mydomain")
+    pause()
+
+    logger.info("Beginning step4_enable_party_on_target.")
+    repair.party_migration.step4_enable_party_on_target(
+      participant2, Set(alice))
+    pause()
+
+    logger.info("Beginning step5_remove_party_delegation_from_source.")
+    repair.party_migration.step5_remove_party_delegation_from_source(
+      participant1, Set(alice), participant1)
+    pause()
+
+    logger.info("Disconnecting participant1.")
+    participant1.domains.disconnect("mydomain")
+    pause()
+
+    logger.info("Beginning step6_cleanup_source.")
+    repair.party_migration.step6_cleanup_source(
+      participant1, gzipfile, Set())
+    pause()
+
+    logger.info("Reconnecting participant1.")
+    participant1.domains.reconnect("mydomain")
+    pause()
+
+    // cleanup
+    mydomain.service.set_max_rate_per_participant(mrrp)
+    pause()
+}

@@ -1,0 +1,36 @@
+module Setup where
+
+import Daml.Script
+import DA.Time (milliseconds)
+import Helpers
+import Main
+
+create_contract : Party -> Party -> Int -> Script (ContractId PaintHouse)
+create_contract owner painter amount = do
+  let retries = Retries 10 (milliseconds 500)
+
+  cidBidRequest <- submit owner do
+    createCmd BidRequest with ..
+
+  cidBid <- submitAfterPollingForCid painter cidBidRequest retries do
+    exerciseCmd cidBidRequest Propose with ..
+ 
+  submitAfterPollingForCid owner cidBid retries do
+    exerciseCmd cidBid Accept
+
+create_contracts : Script ()
+create_contracts = script do
+
+  let participants = [ParticipantName "participant2", ParticipantName "participant1"]
+
+  alice <- findOrAllocatePartyOnAny "alice" participants
+  bob <- findOrAllocatePartyOnAny "bob" participants
+  charlie <- findOrAllocatePartyOnAny "charlie" participants
+
+  debugRaw "Charlie to paint Alice's house"
+  _ <- create_contract alice charlie 1000
+  
+  debugRaw "Charlie to paint Bob's house"
+  _ <- create_contract bob charlie 2000
+
+  pure ()

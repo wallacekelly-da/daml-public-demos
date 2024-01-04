@@ -1,0 +1,3 @@
+val thisNode = participants.local.head
+thisNode.domains.connect("mydomain", connection="http://mydomain:5001")
+thisNode.dars.upload("/canton/host/dist/demo-0.0.1.dar")

@@ -1,0 +1,12 @@
+participant1.domains.connect("mydomain", connection="http://mydomain:5001")
+participant1.dars.upload("/canton/host/dist/demo-0.0.1.dar")
+
+def allocateOrGetParty(hint: String): PartyId =
+    participant1.parties.list().find(p => p.party.uid.id == hint) match {
+    case None => participant1.parties.enable(hint)
+    case Some(p) => p.party
+  }
+
+allocateOrGetParty("alice")
+allocateOrGetParty("bob")
+allocateOrGetParty("charlie")

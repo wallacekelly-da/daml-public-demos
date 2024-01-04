@@ -1,0 +1,25 @@
+module LedgerState where 
+
+import Daml.Script
+import DA.Foldable (forA_)
+import qualified DA.Text as T (takeWhile, takeWhileEnd) 
+import Main
+
+prettyPrintParty : Party -> Text
+prettyPrintParty p = T.takeWhileEnd (/= "'") $ T.takeWhile (/= ":") (show p) 
+
+listContractsForParty : Party -> Script ()
+listContractsForParty party = script do
+  contracts <- query @PaintHouse party
+  forA_ contracts (\(cid, c) -> do
+      let painter = prettyPrintParty c.acceptedBid.request.painter
+          owner = prettyPrintParty c.acceptedBid.request.owner in
+        debugRaw $ (prettyPrintParty party) <> " sees: " <> painter <> " painting for " <> owner
+    )
+
+listContracts : Script ()
+listContracts = script do
+  parties <- filter isLocal <$> listKnownParties
+  forA_ parties (\pd -> do
+    _ <- listContractsForParty pd.party
+    pure())

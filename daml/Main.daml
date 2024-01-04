@@ -1,0 +1,31 @@
+module Main where
+
+template BidRequest
+  with
+    owner : Party
+    painter : Party
+  where
+    signatory owner
+    observer painter
+    
+    choice Propose : ContractId Bid
+      with amount : Int
+      controller painter
+      do create Bid with request = this, ..
+
+template Bid
+  with
+    request : BidRequest
+    amount : Int
+  where
+    signatory request.owner, request.painter
+    
+    choice Accept : ContractId PaintHouse
+      controller request.owner
+      do create PaintHouse with acceptedBid = this
+
+template PaintHouse
+  with
+    acceptedBid : Bid
+  where
+    signatory (signatory acceptedBid)

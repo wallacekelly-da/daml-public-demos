@@ -1,0 +1,170 @@
+services:
+
+  mydomain_db:
+    container_name: mydomain_db
+    image: postgres:14.10
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d postgres -U postgres" ]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    expose:
+      - 5432
+    ports:
+      - 5433:5432
+
+  mydomain:
+    container_name: mydomain
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.3
+    volumes:
+      - ./configs:/canton/host/configs:r
+    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container --log-level-root INFO
+    depends_on:
+      mydomain_db:
+        condition: service_healthy
+    expose:
+      - 5001
+      - 5002
+    ports:
+      - 5001:5001
+      - 5002:5002
+
+  participant1_db:
+    container_name: participant1_db
+    image: postgres:14.10
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d postgres -U postgres" ]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    expose:
+      - 5432
+    ports:
+      - 5434:5432
+
+  participant1:
+    container_name: participant1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.3
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container --log-level-root INFO
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/grpc_health_probe",
+          "--addr",
+          "participant1:5861"
+        ]
+    depends_on:
+      mydomain:
+        condition: service_started
+      participant1_db:
+        condition: service_healthy
+    expose:
+      - 5003
+      - 5004
+    ports:
+      - 5003:5003
+      - 5004:5004
+
+  participant2_db:
+    container_name: participant2_db
+    image: postgres:14.10
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d postgres -U postgres" ]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    expose:
+      - 5432
+    ports:
+      - 5435:5432
+
+  participant2:
+    container_name: participant2
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.3
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: daemon --config "/canton/host/configs/participant2.conf" --bootstrap "/canton/host/configs/participant2.canton" --log-profile container --log-level-root INFO
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/grpc_health_probe",
+          "--addr",
+          "participant2:5861"
+        ]
+    depends_on:
+      mydomain:
+        condition: service_started
+      participant2_db:
+        condition: service_healthy
+    expose:
+      - 5005
+      - 5006
+    ports:
+      - 5005:5005
+      - 5006:5006
+
+  setup:
+    container_name: setup
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.3
+    volumes:
+      - ./configs:/canton/host/configs:rw
+    command: run /canton/host/configs/setup.canton --config "/canton/host/configs/remote.conf" --log-profile container --log-level-root INFO
+    depends_on:
+      participant1:
+        condition: service_healthy
+      participant2:
+        condition: service_healthy
+
+  contracts:
+    container_name: contracts
+    image: digitalasset/daml-sdk:2.8.3
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: daml script --dar /canton/host/dist/demo-0.0.1.dar --script-name Setup:create_contracts --participant-config /canton/host/configs/participant-config.json
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+
+  migrate:
+    container_name: migrate
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.3
+    volumes:
+      - ./configs:/canton/host/configs:rw
+    command: run /canton/host/configs/migrate.canton --config "/canton/host/configs/remote.conf" --log-profile container --log-level-root INFO
+
+  navigator1:
+    container_name: navigator1
+    image: digitalasset/daml-sdk:2.8.3
+    command: daml navigator server participant1 5003 --port 8080 --feature-user-management false
+    depends_on:
+      participant1:
+        condition: service_healthy
+    expose:
+      - 8080
+    ports:
+      - 4001:8080
+
+  navigator2:
+    container_name: navigator2
+    image: digitalasset/daml-sdk:2.8.3
+    command: daml navigator server participant2 5005 --port 8080 --feature-user-management false
+    depends_on:
+      participant2:
+        condition: service_healthy
+    expose:
+      - 8080
+    ports:
+      - 4002:8080

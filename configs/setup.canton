@@ -1,0 +1,10 @@
+utils.retry_until_true(
+  participant1.parties.list().exists(p => p.party.uid.id == "alice")
+  && participant1.parties.list().exists(p => p.party.uid.id == "bob")
+  && participant1.parties.list().exists(p => p.party.uid.id == "charlie")
+)
+
+utils.generate_daml_script_participants_conf(
+  file=Some("/canton/host/configs/participant-config.json"),
+  defaultParticipant=Some(participant1)
+)
