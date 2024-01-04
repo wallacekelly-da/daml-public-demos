@@ -1,1 +1,8 @@
 .DS_Store
+/.daml
+/.metals
+/.vscode
+/log
+navigator.log
+.scalafmt.conf
+configs/participant-config.json
