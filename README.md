@@ -24,6 +24,16 @@ I do this with:
 
 ## Sample Commands
 
+Checkout this branch.
+
+```
+git clone https://github.com/wallacekelly-da/daml-public-demos.git --branch daml-script-participant-config --single-branch daml-script-participant-config
+
+cd daml-script-participant-config
+```
+
+Run these commands:
+
 ```
 daml build
 
