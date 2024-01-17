@@ -74,7 +74,9 @@ services:
       - ./configs:/canton/host/configs:rw
     command: run /canton/host/configs/utils.canton --config "/canton/host/configs/remote.conf" --log-profile container --log-level-canton ERROR
     depends_on:
-      participant1:
-        # condition: service_healthy
-      participant2:
-        # condition: service_healthy
+      - participant1
+      # participant1:
+      #   condition: service_healthy
+      - participant2
+      # participant2:
+      #   condition: service_healthy
