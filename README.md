@@ -83,8 +83,7 @@ services:
 ### Before
 
 ```
-> docker compose down
-> docker compose up
+> docker compose up --abort-on-container-exit
 
 [+] Running 5/5
  ✔ Network daml-public-demos_default  Created
@@ -99,8 +98,7 @@ utils  | ERROR Node participant1 is not initialized and therefore does not have 
 ### After
 
 ```
-> docker compose down
-> docker compose up
+> docker compose up --abort-on-container-exit
 
 [+] Running 5/4
  ✔ Network daml-public-demos_default  Created
