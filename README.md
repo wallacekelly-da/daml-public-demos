@@ -1,5 +1,15 @@
 # Daml Public Demos by Wallace Kelly
 
+## Source Code
+
+Checkout this branch.
+
+```
+git clone https://github.com/wallacekelly-da/daml-public-demos.git --branch docker-compose-health-check --single-branch docker-compose-health-check
+
+cd docker-compose-health-check
+```
+
 ## Background
 
 On a recent project, I needed to run a Docker Compose network.
