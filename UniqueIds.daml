@@ -1,0 +1,50 @@
+module UniqueIds (reserveFor, reserveOneFor) where
+
+import Daml.Script
+
+import DA.Date
+import DA.List (head)
+import DA.Optional (fromOptional)
+import DA.Text (intercalate)
+
+template UniqueIdsGenerator
+  with
+    party : Party
+    partyHint : Text
+    label : Text
+    prevCount : Int
+    prevDate : Date
+
+  where
+    signatory party
+    key (party, label): (Party, Text)
+    maintainer key._1
+
+    choice Reserve : [Text]
+      with count : Int
+      controller party
+      do
+        today <- toDateUTC <$> getTime
+        let todayText = show today
+            nextCount = if today > prevDate then 1 else prevCount + 1
+            lastCount = nextCount + count - 1
+            countToId i = intercalate "-" [label, todayText, show i, partyHint]
+            ids = map countToId [ nextCount .. lastCount ]
+        create this with prevCount = lastCount, prevDate = today
+        pure ids
+
+reserveFor : Party -> Text -> Int -> Script [Text]
+reserveFor party label count = do
+  cidOptional <- queryContractKey @UniqueIdsGenerator party (party, label)
+  case cidOptional of
+    Some (cid, _) -> submit party $ exerciseCmd cid Reserve with ..
+    None -> do
+      today <- toDateUTC <$> getTime
+      parties <- listKnownParties
+      let partyHint = fromOptional "unknown" $ find (\p -> p.party == party) parties >>= displayName
+          prevCount = 0
+          prevDate = today
+      submit party $ createAndExerciseCmd (UniqueIdsGenerator with ..) (Reserve with ..)
+
+reserveOneFor : Party -> Text -> Script Text
+reserveOneFor party label = head <$> reserveFor party label 1

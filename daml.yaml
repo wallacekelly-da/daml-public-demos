@@ -1,0 +1,8 @@
+sdk-version: 2.8.0
+name: UniqueIds
+source: .
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
