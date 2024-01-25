@@ -1,0 +1,82 @@
+services:
+
+  mydomain:
+    container_name: mydomain
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:r
+    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container
+    expose:
+      - 5001
+      - 5002
+    ports:
+      - 5001:5001
+      - 5002:5002
+
+  participant1:
+    container_name: participant1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/grpc_health_probe",
+          "--addr",
+          "participant1:5861"
+        ]
+    depends_on:
+      - mydomain
+    expose:
+      - 5003
+      - 5004
+    ports:
+      - 5003:5003
+      - 5004:5004
+
+  pqs1_db:
+    container_name: pqs1_db
+    image: postgres:16
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "postgres" ]
+    ports:
+      - 5432:5432
+
+  pqs1_scribe:
+    container_name: pqs1_scribe
+    image: digitalasset-docker.jfrog.io/participant-query-store:0.1.0
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./jars:/canton/host/jars:r
+    command: pipeline ledger postgres-document --config /canton/host/configs/pqs1_scribe.conf
+    depends_on:
+      pqs1_db:
+        condition: service_healthy
+      participant1:
+        condition: service_healthy
+
+  scripts:
+    container_name: scripts
+    image: digitalasset/daml-sdk:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: daml script --dar /canton/host/dist/demo-0.0.1.dar --all --ledger-host participant1 --ledger-port 5003
+    depends_on:
+      participant1:
+        condition: service_healthy
+
+  adminer1:
+    container_name: adminer1
+    image: adminer
+    depends_on:
+      - pqs1_db
+    environment:
+      - ADMINER_DEFAULT_SERVER=pqs1_db
+    ports:
+      - 8080:8080
