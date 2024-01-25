@@ -9,6 +9,14 @@ This demo is for initial investigation of PQS -- not a full production configura
 
 ## Sample Commands
 
+Checkout the demo:
+
+```
+git clone https://github.com/wallacekelly-da/daml-public-demos.git --branch pqs-simple-docker-compose --single-branch pqs-simple-docker-compose
+```
+
+Get the required images:
+
 ```
 docker login digitalasset-docker.jfrog.io
 
@@ -16,6 +24,8 @@ docker pull digitalasset-docker.jfrog.io/canton-enterprise:2.7.6
 
 docker pull digitalasset-docker.jfrog.io/participant-query-store:0.1.0
 ```
+
+Run the demo:
 
 ```
 daml build
