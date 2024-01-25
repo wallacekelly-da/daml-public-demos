@@ -1,0 +1,22 @@
+{
+  "default_participant" : {
+    "host" : "participant1",
+    "port" : 5003
+  },
+  "participants" : {
+    "participant1" : {
+      "host" : "participant1",
+      "port" : 5003
+    },
+    "participant2" : {
+      "host" : "participant2",
+      "port" : 5005
+    }
+  },
+  "party_participants" : {
+    "participant2::1220863961cc050d02f36c1d8fb430c3a22ce5ad362bd43bea6e52016e120e60260c" : "participant2",
+    "participant1::12204b39c69952e9352049abdd2dbbadbc978ceb1c773bbcde99186fe34610821543" : "participant1",
+    "alice::12204b39c69952e9352049abdd2dbbadbc978ceb1c773bbcde99186fe34610821543" : "participant1",
+    "bob::1220863961cc050d02f36c1d8fb430c3a22ce5ad362bd43bea6e52016e120e60260c" : "participant2"
+  }
+}

@@ -1,0 +1,147 @@
+services:
+
+  mydomain:
+    container_name: mydomain
+    image: digitalasset/canton-open-source:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container --log-level-root WARN
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD",
+    #       "/usr/local/bin/grpc_health_probe",
+    #       "--addr",
+    #       "mydomain:5861"
+    #     ]
+    expose:
+      - 5001
+      - 5002
+    ports:
+      - 5001:5001
+      - 5002:5002
+
+  participant1:
+    container_name: participant1
+    image: digitalasset/canton-open-source:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+      - ./.daml/dist/:/canton/host/dist/:rw
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container --log-level-root WARN
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD",
+    #       "/usr/local/bin/grpc_health_probe",
+    #       "--addr",
+    #       "participant1:5861"
+    #     ]
+    depends_on:
+      - mydomain
+    expose:
+      - 5003
+      - 5004
+    ports:
+      - 5003:5003
+      - 5004:5004
+
+  pqs1:
+    container_name: pqs1
+    image: postgres:16
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432
+
+  scribe1:
+    container_name: scribe1
+    image: digitalasset-external-docker-images.jfrog.io/participant-query-store:0.1.0
+    volumes:
+      - ./configs:/canton/host/configs:rw
+    command: pipeline ledger postgres-document --config /canton/host/configs/scribe1.conf
+    depends_on:
+      - participant1
+      - pqs1
+
+  adminer1:
+    container_name: adminer1
+    image: adminer
+    depends_on:
+      - pqs1
+    environment:
+      - ADMINER_DEFAULT_SERVER=pqs1
+    ports:
+      - 8080:8080
+
+  participant2:
+    container_name: participant2
+    image: digitalasset/canton-open-source:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+      - ./.daml/dist/:/canton/host/dist/:rw
+    command: daemon --config "/canton/host/configs/participant2.conf" --bootstrap "/canton/host/configs/participant2.canton" --log-profile container --log-level-root WARN
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD",
+    #       "/usr/local/bin/grpc_health_probe",
+    #       "--addr",
+    #       "participant2:5861"
+    #     ]
+    depends_on:
+      - mydomain
+    expose:
+      - 5005
+      - 5006
+    ports:
+      - 5005:5005
+      - 5006:5006
+
+  pqs2:
+    container_name: pqs2
+    image: postgres:16
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5433:5432
+
+  scribe2:
+    container_name: scribe2
+    image: digitalasset-external-docker-images.jfrog.io/participant-query-store:0.0.2
+    command: pipeline ledger postgres-document --source-ledger-host participant2 --source-ledger-port 5005 --target-postgres-host pqs2 --target-postgres-port 5432
+    # command: pipeline --help
+    depends_on:
+      - participant2
+      - pqs2
+
+  adminer2:
+    container_name: adminer2
+    image: adminer
+    depends_on:
+      - pqs2
+    environment:
+      - ADMINER_DEFAULT_SERVER=pqs2
+    ports:
+      - 8081:8080
+
+  utils:
+    container_name: utils
+    image: digitalasset/canton-open-source:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+    command: run /canton/host/configs/utils.canton --config "/canton/host/configs/remote.conf" --log-profile container --log-level-canton ERROR
+    depends_on:
+      - participant1
+      # participant1:
+      #   condition: service_healthy
+      - participant2
+      # participant2:
+      #   condition: service_healthy
+
+  scripts:
+    container_name: scripts
+    image: digitalasset/daml-sdk:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+      - ./.daml/dist/:/canton/host/dist/:rw
+    command: daml script --dar /canton/host/dist/demo-0.0.1.dar --script-name Scripts:happy_path --participant-config /canton/host/configs/participant-config.json
