@@ -1,0 +1,25 @@
+module Scripts where
+
+import Daml.Script
+import Main
+import Helpers
+
+happy_path : Script ()
+happy_path = script do
+
+  alice <- findOrAllocateParty "alice"
+  bob <- findOrAllocateParty "bob"
+
+  debug "Alice creating a bid request..."
+  cidBidRequest <- submit alice do
+    createCmd BidRequest with owner = alice, painter = bob
+
+  debug "Bob submitting a proposal..."
+  cidBid <- submit bob do
+    exerciseCmd cidBidRequest Propose with amount = 1000.0
+ 
+  debug "Alice accepting the proposal..."
+  cidPaintHouse <- submit alice do
+    exerciseCmd cidBid Accept
+  
+  pure ()
