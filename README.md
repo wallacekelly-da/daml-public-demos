@@ -7,6 +7,17 @@ Each demo is in its own Git branch.
 This demo gets a minimal instance of PQS up-and-running.
 This demo is for initial investigation of PQS -- not a full production configuration.
 
+```mermaid
+flowchart LR
+    Script --> Participant
+    Participant <--> MyDomain
+    Participant --> PQS_Scribe
+    subgraph PQS
+    PQS_Scribe --> PQS_DB
+    end
+    PQS_DB --> Adminer
+```
+
 ## Sample Commands
 
 Checkout the demo:
