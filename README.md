@@ -9,13 +9,13 @@ This demo is for initial investigation of PQS -- not a full production configura
 
 ```mermaid
 flowchart LR
-    Script --> Participant
-    Participant <--> MyDomain
-    Participant --> PQS_Scribe
+    scripts --> participant1
+    participant1 <--> mydomain
+    participant1 --> pqs1_scribe
     subgraph PQS
-    PQS_Scribe --> PQS_DB
+    pqs1_scribe --> pqs1_db
     end
-    PQS_DB --> Adminer
+    pqs1_db --> adminer1
 ```
 
 ## Sample Commands
