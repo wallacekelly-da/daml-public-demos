@@ -54,8 +54,6 @@ services:
       - ./configs:/canton/host/configs:r
       - ./jars:/canton/host/jars:r
     command: pipeline ledger postgres-document --config /canton/host/configs/pqs1_scribe.conf
-    environment:
-      - OTEL_JAVAAGENT_ENABLED=false
     depends_on:
       pqs1_db:
         condition: service_healthy
