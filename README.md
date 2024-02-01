@@ -31,7 +31,7 @@ Get the required images:
 ```
 docker login digitalasset-docker.jfrog.io
 
-docker pull digitalasset-docker.jfrog.io/canton-enterprise:2.7.6
+docker pull digitalasset-docker.jfrog.io/canton-enterprise:2.8.1
 
 docker pull digitalasset-docker.jfrog.io/participant-query-store:0.1.0
 ```

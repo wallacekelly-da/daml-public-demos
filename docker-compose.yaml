@@ -2,7 +2,7 @@ services:
 
   mydomain:
     container_name: mydomain
-    image: digitalasset-docker.jfrog.io/canton-enterprise:2.7.6
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.1
     volumes:
       - ./configs:/canton/host/configs:r
     command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container
@@ -15,7 +15,7 @@ services:
 
   participant1:
     container_name: participant1
-    image: digitalasset-docker.jfrog.io/canton-enterprise:2.7.6
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.1
     volumes:
       - ./configs:/canton/host/configs:r
       - ./.daml/dist/:/canton/host/dist/:r
@@ -62,7 +62,7 @@ services:
 
   scripts:
     container_name: scripts
-    image: digitalasset/daml-sdk:2.7.6
+    image: digitalasset/daml-sdk:2.8.1
     volumes:
       - ./configs:/canton/host/configs:r
       - ./.daml/dist/:/canton/host/dist/:r
