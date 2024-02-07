@@ -57,7 +57,7 @@ docker compose down
 Open a `psql` console to the PQS.
 
 ```
-docker run -it --rm --network pqs-simple-docker-compose_default postgres:16 psql --host=pqs1_db --username=postgres postgres
+docker run -it --rm --network pqs-simple-docker-compose_default  --volume ./:/host/ postgres:16 psql --host=pqs1_db --username=postgres postgres
 ```
 
 ```
