@@ -1,11 +1,15 @@
-# Daml Public Demos by Wallace Kelly
+# PQS Postgres Notify Listen demo
 
 Each demo is in its own Git branch.
 
 ## Purpose
 
-This demo gets a minimal instance of PQS up-and-running.
-This demo is for initial investigation of PQS -- not a full production configuration.
+This demo shows how to use Postgres' NOTIFY/LISTEN mechanism.
+The demo happens to use PQS as a source of changes
+within a Postgres instance.
+To be clear, this is not a demo of PQS functionality but
+of a Postgres feature.
+
 
 ```mermaid
 flowchart LR
@@ -16,14 +20,24 @@ flowchart LR
     pqs1_scribe --> pqs1_db
     end
     pqs1_db --> adminer1
+    pqs1_db --> listener.js
+    listener.js --event stream-->kafka:::hidden
+
+    classDef hidden display: none;
 ```
+
+## References
+
+[All the Ways to Capture Changes in Postgres](https://blog.sequin.io/all-the-ways-to-capture-changes-in-postgres/) is an excellent blog post on the subject.
+
+[PQS Simple Docker Compose demo](https://github.com/wallacekelly-da/daml-public-demos/tree/pqs-simple-docker-compose) explains more about the PQS aspects of this demo.
 
 ## Sample Commands
 
 Checkout the demo:
 
 ```
-git clone https://github.com/wallacekelly-da/daml-public-demos.git --branch pqs-simple-docker-compose --single-branch pqs-simple-docker-compose
+git clone https://github.com/wallacekelly-da/daml-public-demos.git --branch pqs-postgres-notify-listen --single-branch pqs-postgres-notify-listen
 ```
 
 Get the required images:
@@ -34,34 +48,45 @@ docker login digitalasset-docker.jfrog.io
 docker compose pull
 ```
 
+Check that node is installed:
+
+```
+> node --version
+v16.20.2
+```
+
 Run the demo:
 
 ```
-daml build
+# start the Canton components
+daml build; docker compose up setup
 
-docker compose up pqs1_scribe --detach
+# start the Javascript listener
+node install; node listener.js
 
-# wait for services to be up-and-running
+# create contracts on the ledger
+docker compose up contracts
+docker compose up contracts
+docker compose up contracts
 
-docker compose up adminer1 --detach
+# observe the listener responding
+# to changes on the ledger
 
-# explore the database (http://localhost:8080/)
-
-docker compose up scripts
-
+# cleanup
 docker compose down
 ```
 
 ## Additional Commands
 
-Open a `psql` console to the PQS.
+Open a `psql` console to Postgres.
 
 ```
-docker run -it --rm --network pqs-simple-docker-compose_default  --volume ./:/host/ postgres:16 psql --host=pqs1_db --username=postgres postgres
+docker run -it --rm --network pqs-postgres-notify-listen_default --volume ./:/host/ postgres:16 psql --host=pqs1_db --username=postgres --dbname=postgres
 ```
 
 ```
 postgres=# \dt
+
                List of relations
  Schema |       Name        | Type  |  Owner
 --------+-------------------+-------+----------
@@ -79,7 +104,9 @@ postgres=# \dt
  public | _reassignments    | table | postgres
  public | _transactions     | table | postgres
  public | _watermark        | table | postgres
+```
 
+```
 postgres=# select payload->'acceptedBid'->'amount' as amount from "PaintHouse.kcam2p";
 
       amount
