@@ -59,10 +59,15 @@ Run the demo:
 
 ```
 # start the Canton components
-daml build; docker compose up setup
+daml build
+docker compose up --detach pqs1_scribe
+
+# wait for pqs1_scribe to warm up, then
+docker compose up setup
 
 # start the Javascript listener
-node install; node listener.js
+node install
+node listener.js
 
 # create contracts on the ledger
 docker compose up contracts
