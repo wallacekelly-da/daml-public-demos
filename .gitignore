@@ -4,3 +4,4 @@
 .daml
 navigator.log
 .vscode
+node_modules/
