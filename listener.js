@@ -18,19 +18,21 @@ async function main() {
     database: "postgres",
     port: 5432
   })
-  await client.connect()
-  client.query('LISTEN pqs_watermark_changes');
+
   client.on('notification', (msg) => { console.log(msg.payload) });
   client.on('error', _ => { console.log("There was an error.") });
   client.on('end', _ => {
     console.log("Shutting down.");
     process.exit(0);
   });
+
+  await client.connect()
+  await client.query('LISTEN pqs_watermark_changes');
   
   console.log("Listening...");
-  console.log("Press any key to stop.");
+  console.log("Press any key to stop.\n");
   await keypress();
-  client.end();
+  await client.end();
 }
 
 main();
