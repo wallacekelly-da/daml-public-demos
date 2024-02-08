@@ -52,7 +52,6 @@ services:
     image: digitalasset-docker.jfrog.io/participant-query-store:0.1.0
     volumes:
       - ./configs:/canton/host/configs:r
-      - ./jars:/canton/host/jars:r
     command: pipeline ledger postgres-document --config /canton/host/configs/pqs1_scribe.conf
     depends_on:
       pqs1_db:
@@ -66,7 +65,7 @@ services:
     volumes:
       - ./configs:/canton/host/configs:r
       - ./.daml/dist/:/canton/host/dist/:r
-    command: daml script --dar /canton/host/dist/demo-0.0.1.dar --all --ledger-host participant1 --ledger-port 5003
+    command: daml script --dar /canton/host/dist/demo-0.0.1.dar --script-name Scripts:happy_path --ledger-host participant1 --ledger-port 5003
     depends_on:
       participant1:
         condition: service_healthy
