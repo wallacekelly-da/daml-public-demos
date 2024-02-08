@@ -60,7 +60,7 @@ services:
       participant1:
         condition: service_healthy
 
-  scripts:
+  contracts:
     container_name: scripts
     image: digitalasset/daml-sdk:2.8.1
     volumes:
@@ -80,3 +80,12 @@ services:
       - ADMINER_DEFAULT_SERVER=pqs1_db
     ports:
       - 8080:8080
+
+  setup:
+    container_name: setup
+    image: postgres:16
+    volumes:
+      - ./:/host/
+    environment:
+      - PGPASSWORD=postgres
+    command: psql --host=pqs1_db --username=postgres --dbname=postgres --file=/host/setup.sql
