@@ -10,20 +10,18 @@ within a Postgres instance.
 To be clear, this is not a demo of PQS functionality but
 of a Postgres feature.
 
-
 ```mermaid
 flowchart LR
-    classDef hidden display: none;
-
     scripts --> participant1
     participant1 <--> mydomain
     participant1 --> pqs1_scribe
-    subgraph PQS
+   subgraph PQS
     pqs1_scribe --> pqs1_db
     end
-    pqs1_db --> adminer1
     pqs1_db --> listener.js
-    listener.js --event stream-->kafka:::hidden
+    listener.js --event stream-->consumer
+
+    style consumer fill:#FFFFFF00,stroke:#FFFFFF00,color:#FFFFFF00
 ```
 
 ## References
