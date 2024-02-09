@@ -4,7 +4,7 @@ Each demo is in its own Git branch.
 
 ## Purpose
 
-This demo shows how to use Postgres' NOTIFY/LISTEN mechanism.
+This demo shows how to use Postgres' _notification event_ mechanism.
 The demo happens to use PQS as a source of changes
 within a Postgres instance.
 To be clear, this is not a demo of PQS functionality but
