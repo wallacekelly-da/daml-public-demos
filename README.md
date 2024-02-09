@@ -121,3 +121,7 @@ postgres=# select payload->'acceptedBid'->'amount' as amount from "PaintHouse.kc
  "1000.0000000000"
 (1 row)
 ```
+
+```
+postgres=# \q
+```
