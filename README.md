@@ -13,6 +13,8 @@ of a Postgres feature.
 
 ```mermaid
 flowchart LR
+    classDef hidden display: none;
+
     scripts --> participant1
     participant1 <--> mydomain
     participant1 --> pqs1_scribe
@@ -22,8 +24,6 @@ flowchart LR
     pqs1_db --> adminer1
     pqs1_db --> listener.js
     listener.js --event stream-->kafka:::hidden
-
-    classDef hidden display: none;
 ```
 
 ## References
