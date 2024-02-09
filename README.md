@@ -65,6 +65,8 @@ docker compose up --detach pqs1_scribe
 # wait for pqs1_scribe to warm up, then
 docker compose up setup
 
+# use http://localhost:8080 to explore the db
+
 # start the Javascript listener
 node install
 node listener.js

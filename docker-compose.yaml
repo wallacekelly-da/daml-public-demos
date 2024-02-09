@@ -47,6 +47,16 @@ services:
     ports:
       - 5432:5432
 
+  adminer1:
+    container_name: adminer1
+    image: adminer
+    depends_on:
+      - pqs1_db
+    environment:
+      - ADMINER_DEFAULT_SERVER=pqs1_db
+    ports:
+      - 8080:8080
+
   pqs1_scribe:
     container_name: pqs1_scribe
     image: digitalasset-docker.jfrog.io/participant-query-store:0.1.0
@@ -58,6 +68,17 @@ services:
         condition: service_healthy
       participant1:
         condition: service_healthy
+      adminer1:
+        condition: service_started
+
+  setup:
+    container_name: setup
+    image: postgres:16
+    volumes:
+      - ./:/host/
+    environment:
+      - PGPASSWORD=postgres
+    command: psql --host=pqs1_db --username=postgres --dbname=postgres --file=/host/setup.sql
 
   contracts:
     container_name: scripts
@@ -69,22 +90,3 @@ services:
     depends_on:
       participant1:
         condition: service_healthy
-
-  adminer1:
-    container_name: adminer1
-    image: adminer
-    depends_on:
-      - pqs1_db
-    environment:
-      - ADMINER_DEFAULT_SERVER=pqs1_db
-    ports:
-      - 8080:8080
-
-  setup:
-    container_name: setup
-    image: postgres:16
-    volumes:
-      - ./:/host/
-    environment:
-      - PGPASSWORD=postgres
-    command: psql --host=pqs1_db --username=postgres --dbname=postgres --file=/host/setup.sql
