@@ -53,7 +53,7 @@ template AssetLookup
       (Lookup with assetKey = (issuer, "TV"))
 ```
 
-The runtime error is:
+The **runtime error** is:
 
 ```
 lookup by key of Main:Asset...
@@ -89,6 +89,8 @@ And then the owner could lookup the contract by key, now that he has the authori
     exerciseCmd lookup Lookup2 with name = "TV"
 ```
 
+Which **succeeds** at runtime.
+
 ## Using fetchByKey instead
 
 As discussed [in the forums](https://discuss.daml.com/t/lookupbykey-vs-fetchbykey-why-can-i-fetch-a-key-but-not-do-a-lookup/181/3?u=wallacekelly) and [in the docs](https://docs.daml.com/daml/reference/contract-keys.html), the authorization rules are different for `lookupByKey` and `fetchByKey`. Here is an example using `fetchByKey`:
@@ -112,4 +114,4 @@ template AssetFetch
       (Fetch with assetKey = (issuer, "TV"))
 ```
 
-Which succeeds at runtime (assuming a contract with the given key exists.)
+Which **succeeds** at runtime.
