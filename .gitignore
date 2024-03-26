@@ -2,3 +2,6 @@
 .scalafmt.conf
 .metals
 .daml
+lib
+.ammonite
+.vscode
