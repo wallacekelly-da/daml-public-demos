@@ -1,0 +1,24 @@
+services:
+
+  canton:
+    container_name: canton
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.4
+    volumes:
+      - ./configs:/canton/host/configs:r
+    command: daemon --config "/canton/host/configs/canton.conf" --log-profile container --log-level-root WARN
+    expose:
+      - "5001-5006:5001-5006"
+    ports:
+      - "5001-5006:5001-5006"
+
+  mockauth:
+    container_name: mockauth
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.4
+    volumes:
+      - ./configs:/configs:r
+    environment:
+      - JSON_CONFIG_PATH=/configs/mockauth.json
+    expose:
+      - "8080:8080"
+    ports:
+      - "8080:8080"
