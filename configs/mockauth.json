@@ -1,34 +1,101 @@
 {
-  "interactiveLogin": true,
-  "httpServer": "NettyWrapper",
   "tokenCallbacks": [
     {
-      "issuerId": "issuer1",
+      "issuerId": "mockissuer",
       "tokenExpiry": 120,
       "requestMappings": [
         {
-          "requestParam": "scope",
-          "match": "scope1",
+          "requestParam": "mock_token_type",
+          "match": "audience",
           "claims": {
-            "sub": "subByScope",
-            "aud": [
-              "audByScope"
-            ]
+            "aud": "https://daml.com/jwt/aud/participant/${participant}",
+            "sub": "${sub}"
           }
-        }
-      ]
-    },
-    {
-      "issuerId": "issuer2",
-      "requestMappings": [
+        },
         {
-          "requestParam": "someparam",
-          "match": "somevalue",
+          "requestParam": "mock_token_type",
+          "match": "scope",
           "claims": {
-            "sub": "subBySomeParam",
-            "aud": [
-              "audBySomeParam"
-            ]
+            "aud": "${participant}",
+            "sub": "${sub}",
+            "scope": "daml_ledger_api"
+          }
+        },
+        {
+          "requestParam": "mock_token_type",
+          "match": "custom",
+          "claims": {
+            "https://daml.com/ledger-api": {
+              "participantId": "${participantId}",
+              "actAs": [
+                "${actAs}"
+              ],
+              "readAs": [
+                "${readAs}"
+              ]
+            }
+          }
+        },
+        {
+          "requestParam": "mock_token_type",
+          "match": "custom-admin",
+          "claims": {
+            "https://daml.com/ledger-api": {
+              "participantId": "${participantId}",
+              "admin": true,
+              "actAs": [
+                "${actAs}"
+              ],
+              "readAs": [
+                "${readAs}"
+              ]
+            }
+          }
+        },
+        {
+          "requestParam": "mock_token_type",
+          "match": "custom-participant1-admin",
+          "claims": {
+            "https://daml.com/ledger-api": {
+              "participantId": "<<replace with participant id>>",
+              "admin": true,
+              "actAs": [
+                "<<replace with admin party id>>"
+              ],
+              "readAs": [
+                "<<replace with admin party id>>"
+              ]
+            }
+          }
+        },
+        {
+          "requestParam": "mock_token_type",
+          "match": "custom-participant1-scheduler",
+          "claims": {
+            "https://daml.com/ledger-api": {
+              "participantId": "<<replace with participant id>>",
+              "actAs": [
+                "<<replace with scheduler party id>>"
+              ],
+              "readAs": [
+                "<<replace with scheduler party id>>"
+              ]
+            }
+          }
+        },
+        {
+          "requestParam": "mock_token_type",
+          "match": "custom-participant1-contractor",
+          "claims": {
+            "https://daml.com/ledger-api": {
+              "participantId": "<<replace with participant id>>",
+              "actAs": [
+                "<<replace with contractor party id"
+              ],
+              "readAs": [
+                "<<replace with contractor party id"
+              ]
+            }
           }
         }
       ]

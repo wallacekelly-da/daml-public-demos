@@ -1,0 +1,59 @@
+import com.digitalasset.canton.console.ParticipantReference
+
+participant1.domains.connect("mydomain", connection="http://canton:5001")
+participant2.domains.connect("mydomain", connection="http://canton:5001")
+
+def enableOrGetParty(participant: ParticipantReference, partyId: String): PartyId =
+  participant.parties.list().find(p => p.party.uid.id == partyId) match {
+    case Some(p) => p.party
+    case None => participant.parties.enable(partyId, waitForDomain=DomainChoice.All)
+  }
+
+def createOrGetUser(participant: ParticipantReference, userId: String, partyId: PartyId, isAdmin: Boolean, description: String) : User =
+  participant.ledger_api.users.list().users
+    .filter(u => u.id == userId)
+    .headOption match {
+      case Some(u) => u
+      case None =>
+        participant.ledger_api.users.create(
+          id = userId,
+          actAs = Set(partyId),
+          readAs = Set(partyId),
+          primaryParty = Some(partyId),
+          participantAdmin = isAdmin,
+          isActive = true,
+          annotations = Map(
+              "description" -> description
+            )
+          )
+    }
+
+var admin1 = enableOrGetParty(participant1, "admin")
+var scheduler1 = enableOrGetParty(participant1, "scheduler")
+var contractor1 = enableOrGetParty(participant1, "contractor")
+
+createOrGetUser(participant1, "wallace", admin1, true, "Wallace Kelly")
+createOrGetUser(participant1, "alice", scheduler1, false, "Alice Jones")
+createOrGetUser(participant1, "bob", contractor1, false, "Bob Smith")
+
+var admin2 = enableOrGetParty(participant2, "admin")
+var scheduler2 = enableOrGetParty(participant2, "scheduler")
+var contractor2 = enableOrGetParty(participant2, "contractor")
+
+createOrGetUser(participant2, "wallace", admin2, true, "Wallace Kelly")
+createOrGetUser(participant2, "carol", scheduler2, false, "Carol Smith")
+createOrGetUser(participant2, "dave", contractor2, false, "Dave Jones")
+
+import java.nio.file.{Paths, Files}
+import java.nio.charset.StandardCharsets
+def writeParticipantId(participant: ParticipantReference) = {
+  val participantId = participant.id.toProtoPrimitive.substring(5)
+  val name = participantId.split("::")(0)
+  Files.write(
+    Paths.get("/canton/host/configs/" + name + ".id"),
+      participantId.getBytes(StandardCharsets.UTF_8)
+  )
+}
+
+writeParticipantId(participant1);
+writeParticipantId(participant2);
