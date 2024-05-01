@@ -4,7 +4,7 @@ participant1.domains.connect("mydomain", connection="http://canton:5001")
 participant2.domains.connect("mydomain", connection="http://canton:5001")
 
 def enableOrGetParty(participant: ParticipantReference, partyId: String): PartyId =
-  participant.parties.list().find(p => p.party.uid.id == partyId) match {
+  participant.parties.list().find(p => p.party.uid.id == partyId && p.participants(0).participant == participant) match {
     case Some(p) => p.party
     case None => participant.parties.enable(partyId, waitForDomain=DomainChoice.All)
   }

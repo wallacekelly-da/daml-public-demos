@@ -2,21 +2,14 @@ services:
 
   canton:
     container_name: canton
-    image: digitalasset/canton-open-source:2.7.6
+    image: digitalasset/canton-open-source:2.7.9
     volumes:
       - ./configs:/canton/host/configs
-    command: daemon --config "/canton/host/configs/canton.conf" --bootstrap "/canton/host/configs/bootstrap.canton" --log-profile container --log-level-root WARN
+    command: daemon --config "/canton/host/configs/canton.conf" --bootstrap "/canton/host/configs/bootstrap.canton" --log-profile container --log-level-root INFO
     expose:
       - "5001-5006:5001-5006"
     ports:
       - "5001-5006:5001-5006"
-
-  console:
-    container_name: console
-    image: digitalasset/canton-open-source:2.7.6
-    volumes:
-      - ./configs:/canton/host/configs
-    command: --no-tty --config "/canton/host/configs/console.conf"
 
   mockauth:
     container_name: mockauth
@@ -30,3 +23,12 @@ services:
       - "80:80"
     ports:
       - "8080:80"
+
+  console:
+    container_name: console
+    image: mock-oauth2-demo-console
+    build:
+      context: console/
+      dockerfile: Dockerfile
+    volumes:
+      - ./configs:/home/daml/configs
