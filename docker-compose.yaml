@@ -1,15 +1,45 @@
 services:
 
-  canton:
-    container_name: canton
+  mydomain:
+    container_name: mydomain
     image: digitalasset/canton-open-source:2.7.9
     volumes:
       - ./configs:/canton/host/configs
-    command: daemon --config "/canton/host/configs/canton.conf" --bootstrap "/canton/host/configs/bootstrap.canton" --log-profile container --log-level-root INFO
+    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container --log-level-root INFO
     expose:
-      - "5001-5006:5001-5006"
+      - 4201
+      - 4202
+
+  participant1:
+    container_name: participant1
+    image: digitalasset/canton-open-source:2.7.9
+    volumes:
+      - ./configs:/canton/host/configs
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/bootstrap.canton" --log-profile container --log-level-root INFO
+    depends_on:
+      - mydomain
+      - mockauth
+    expose:
+      - 4001
+      - 4002
     ports:
-      - "5001-5006:5001-5006"
+      - 4001:4001
+      - 4002:4002
+
+  participant2:
+    container_name: participant2
+    image: digitalasset/canton-open-source:2.7.9
+    volumes:
+      - ./configs:/canton/host/configs
+    command: daemon --config "/canton/host/configs/participant2.conf" --bootstrap "/canton/host/configs/bootstrap.canton" --log-profile container --log-level-root INFO
+    depends_on:
+      - mydomain
+    expose:
+      - 4001
+      - 4002
+    ports:
+      - 4003:4001
+      - 4004:4002
 
   mockauth:
     container_name: mockauth

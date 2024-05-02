@@ -10,8 +10,8 @@ as the authorization service for a Canton instance in a Docker Compose network.
 This demo will enable you to:
 
 * Experiment with various auth-related Canton configuration options.
-* Experiment with user access tokens and Canton User Management.
-* Examine the response of the Ledger API endpoints with various JWT claims.
+* Experiment with the relationship between JWT tokens and Canton User Management.
+* Examine the response of the Ledger API endpoints with and without various JWT claims.
 * Test JWT-dependent scripts in a local environment.
 * Build JWT-dependent, automated integration tests.
 
@@ -25,17 +25,58 @@ This demo will enable you to:
 1. Peruse the Canton configuration.
    * [canton.conf](./configs/canton.conf) defines three nodes (`mydomain`, `participant1`, and `participant2`)
    * [bootstrap.canton](./configs/bootstrap.canton) allocates three parties and three users per participant node.
-2. Start the Docker Compose network.  
+2. Start the Docker Compose network.
    ```
-   docker compose up --detach canton
+   docker compose up --detach canton mockauth
    ```
-3. *
+3. Start a console.
+   ```
+   docker compose run --rm console
+   ```
 
-
+To get a token:
 
 ```
-grpcurl -plaintext localhost:5003 com.daml.ledger.api.v1.admin.PartyManagementService/GetParticipantId \
+curl -s http://mockauth/mockissuer/token \
+  -d grant_type=client_credentials \
+  -d client_id=ignored \
+  -d client_secret=ignored \
+  -d mock_token_type=audience \
+  -d participant=`cat "./configs/participant2.id"` \
+  -d sub=wallace \
+  | jq -r '.access_token' \
+  > token.tmp
+```
+
+To view the payload:
+
+```
+cat token.tmp | jq -R 'split(".") | .[0], .[1] | @base64d | fromjson'
+```
+
+To use a token:
+
+```
+daml ledger list-parties --host participant1 --port 4001
+
+daml ledger list-parties --host participant2 --port 4001 --access-token-file token.tmp
+```
+
+To call a Ledger API endpoint:
+
+```
+grpcurl -plaintext participant1:5003 com.daml.ledger.api.v1.admin.PartyManagementService/GetParticipantId \
   | jq -r '.participant_id'
+```
+
+```
+docker run -it --rm console
+
+canton -c configs/console.conf
+
+participant1.ledger_api.users.list().users.map(u => u.id)
+
+participant2.ledger_api.users.list().users.map(u => u.id)
 ```
 
 ## References
@@ -64,3 +105,8 @@ docker compose run --rm console
 ```
 
 https://github.com/navikt/mock-oauth2-server/issues/674
+
+
+## TODO
+
+* Change port numbers to default Canton port numbers.
