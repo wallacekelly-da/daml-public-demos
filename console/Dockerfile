@@ -43,5 +43,6 @@ RUN mkdir -p /tmp/daml-sdk \
   && printf "auto-install: false\nupdate-check: never\n" >> /home/daml/.daml/daml-config.yaml
 ENV PATH="/home/daml/.daml/bin:${PATH}"
 
-# copy over scripts
-COPY ./populateTokens.sh ./populateTokens.sh
+# copy over Daml code
+COPY ./daml.yaml ./daml.yaml
+COPY ./Main.daml ./Main.daml

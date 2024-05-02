@@ -1,0 +1,9 @@
+module Main where
+
+import Daml.Script
+import DA.Foldable (forA_)
+
+getUsers : Script ()
+getUsers = script do
+  users <- listAllUsers
+  forA_ users (\u -> debug u.userId)

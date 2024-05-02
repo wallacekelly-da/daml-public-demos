@@ -65,8 +65,20 @@ daml ledger list-parties --host participant2 --port 4001 --access-token-file tok
 To call a Ledger API endpoint:
 
 ```
-grpcurl -plaintext participant1:5003 com.daml.ledger.api.v1.admin.PartyManagementService/GetParticipantId \
-  | jq -r '.participant_id'
+grpcurl --plaintext participant1:4001 com.daml.ledger.api.v1.admin.UserManagementService/ListUsers | jq '.users[].id'
+
+TOKEN=$(cat token.tmp)
+
+grpcurl --plaintext -H "Authorization: Bearer ${TOKEN}" participant2:4001 com.daml.ledger.api.v1.admin.UserManagementService/ListUsers | jq '.users[].id'
+```
+
+To call a Daml script
+
+```
+daml script --dar .daml/dist/console-1.0.0.dar --all \
+  --ledger-host participant2
+  --ledger-port 4001
+  --access-token-file token.tmp
 ```
 
 ```
@@ -109,4 +121,5 @@ https://github.com/navikt/mock-oauth2-server/issues/674
 
 ## TODO
 
-* Change port numbers to default Canton port numbers.
+* Add a script to get tokens for all six users, writing them to files and environment variables.
+* Write the README instructions.
