@@ -27,7 +27,7 @@ This demo will enable you to:
    * [bootstrap.canton](./configs/bootstrap.canton) allocates three parties and three users per participant node.
 2. Start the Docker Compose network.
    ```
-   docker compose up --detach canton mockauth
+   docker compose up --detach participant1 participant2
    ```
 3. Start a console.
    ```
