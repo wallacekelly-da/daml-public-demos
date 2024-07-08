@@ -22,25 +22,38 @@ This demo will enable you to:
 ## Steps
 
 1. Peruse the Canton configuration.
-   * [canton.conf](./configs/canton.conf) defines three nodes (`mydomain`, `participant1`, and `participant2`)
-   * Notice that `participant1` does _not_ require the token; `participant2` _does_ require a token.
+   * [mydomain.conf](./configs/mydomain.conf), [participant1.conf](./configs/participant1.conf), and [participant2.conf](./configs/participant2.conf)
+   * Notice that `participant1` does _not_ require a JWT; `participant2` _does_ require a JWT.
    * [bootstrap.canton](./configs/bootstrap.canton) allocates three parties and three users per participant node.
 
 2. Peruse the mock-oauth2-server [configuration](./configs/mockauth.json). Notice the four mappings based on `mock_token_type`.
 
 3. Start the Docker Compose network.
+
+   _Using the open-source images:_
+
    ```
    docker compose up --detach participant1 participant2
    ```
 
+   _Or using the enterprise images:_
+
+   ```
+   docker compose \
+      --file docker-compose.yaml \
+      --file docker-compose.enterprise.yaml \
+      up --detach participant1 participant2
+   ```
+
 4. Start a console for running the remaining sample commands.
+
    ```
    docker compose run --rm --build console
    ```
 
 5. Create a variety of tokens:
 
-   [Audience-based token](https://docs.daml.com/app-dev/authorization.html#audience-based-tokens):
+   [Audience-based token](https://docs.daml.com/app-dev/authorization.html#audience-based-tokens), for user `wallace`:
 
    ```
    curl -s http://mockauth/mockissuer/token \
@@ -54,7 +67,7 @@ This demo will enable you to:
       > audience.token
    ```
 
-   [Scope-based token](https://docs.daml.com/app-dev/authorization.html#scope-based-tokens):
+   [Scope-based token](https://docs.daml.com/app-dev/authorization.html#scope-based-tokens), for user `david`:
 
    ```
    curl -s http://mockauth/mockissuer/token \
@@ -68,7 +81,7 @@ This demo will enable you to:
       > scope.token
    ```
 
-   [Custom claims token](https://docs.daml.com/app-dev/authorization.html#custom-daml-claims-access-tokens):
+   [Custom claims token](https://docs.daml.com/app-dev/authorization.html#custom-daml-claims-access-tokens), for the `operator` party:
 
    ```
    curl -s http://mockauth/mockissuer/token \
@@ -102,20 +115,19 @@ This demo will enable you to:
 
    ```
    cat audience.token \
-      | jq -R 'split(".") \
-      | .[0], .[1] \
-      | @base64d \
-      | fromjson'
+      | jq -R 'split(".") | .[0], .[1] | @base64d | fromjson'
    ```
 
 7. Use the tokens with [Daml Assistant](https://docs.daml.com/tools/assistant.html):
 
-   _The following will fail:_
+   _The following will fail, without a JWT:_
+
    ```
    daml ledger list-parties --host participant2 --port 4001
    ```
 
-   _The following will succeed:_
+   _The following will succeed, with a JWT:_
+
    ```
    daml ledger list-parties --host participant2 --port 4001 \
       --access-token-file audience.token
@@ -123,7 +135,8 @@ This demo will enable you to:
 
 8. Use the tokens with [grpcurl](https://github.com/fullstorydev/grpcurl/blob/master/README.md):
 
-   _The following will fail:_
+   _The following will fail, for user `david`:_
+
    ```
    TOKEN=$(cat scope.token)
 
@@ -134,7 +147,8 @@ This demo will enable you to:
       | jq '.users[].id'
    ```
 
-   _The following will succeed:_
+   _The following will succeed, for user `wallace`:_
+
    ```
    TOKEN=$(cat audience.token)
 
@@ -147,21 +161,24 @@ This demo will enable you to:
 
 9. Use the tokens with [Daml Script](https://docs.daml.com/daml-script/index.html):
 
-   _The following will fail:_
+   _The following will fail, when acting as the `operator` party:_
+
    ```
    daml ledger upload-dar .daml/dist/console-1.0.0.dar \
      --host participant2 --port 4001
      --access-token-file custom.token
    ```
 
-   _The following will succeed:_
+   _The following will succeed, when presenting an `admin` token:_
+
    ```
    daml ledger upload-dar .daml/dist/console-1.0.0.dar \
      --host participant2 --port 4001 \
      --access-token-file admin.token
    ```
 
-   _The following will fail:_
+   _The following will fail, without an `actAs` claim:_
+
    ```
    daml script --dar .daml/dist/console-1.0.0.dar \
       --script-name Main:createContracts \
@@ -171,7 +188,8 @@ This demo will enable you to:
       --access-token-file admin.token
    ```
 
-   _The following will succeed:_
+   _The following will succeed, when acting as the `operator` party:_
+
    ```
    daml script --dar .daml/dist/console-1.0.0.dar \
       --script-name Main:createContracts \
