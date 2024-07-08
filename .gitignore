@@ -3,4 +3,5 @@
 .metals
 .daml
 .vscode
-/configs/*.id
+configs/*.id
+configs/*.json

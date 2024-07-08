@@ -46,3 +46,6 @@ ENV PATH="/home/daml/.daml/bin:${PATH}"
 # copy over Daml code
 COPY ./daml.yaml ./daml.yaml
 COPY ./Main.daml ./Main.daml
+
+# build the DAR
+RUN daml build

@@ -17,6 +17,24 @@ def enableOrGetParty(
       participant.parties.enable(partyId, waitForDomain = DomainChoice.All)
   }
 
+def writeId(name: String, id: String) = {
+  Files.write(
+    Paths.get("/canton/host/configs/" + name + ".id"),
+    id.getBytes(StandardCharsets.UTF_8)
+  )
+  Files.write(
+    Paths.get("/canton/host/configs/" + name + ".json"),
+    ("\"" + id + "\"").getBytes(StandardCharsets.UTF_8)
+  )
+}
+
+def writePartyId(participant: ParticipantReference, party: PartyId) = {
+  val participantName = participant.uid.id
+  val partyId = party.uid.toProtoPrimitive
+  val partyName = party.uid.id
+  writeId(participantName + "-" + partyName, partyId)
+}
+
 def createOrGetUser(
     participant: ParticipantReference,
     userId: String,
@@ -45,10 +63,7 @@ def createOrGetUser(
   }
 
 def writeParticipantId(participant: ParticipantReference) = {
-  val participantId = participant.id.toProtoPrimitive.substring(5)
-  val name = participantId.split("::")(0)
-  Files.write(
-    Paths.get("/canton/host/configs/" + name + ".id"),
-    participantId.getBytes(StandardCharsets.UTF_8)
-  )
+  val participantId = participant.uid.toProtoPrimitive
+  val participantName = participant.uid.id.toProtoPrimitive
+  writeId(participantName, participantId)
 }

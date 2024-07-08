@@ -2,7 +2,7 @@
   "tokenCallbacks": [
     {
       "issuerId": "mockissuer",
-      "tokenExpiry": 120,
+      "tokenExpiry": 3600,
       "requestMappings": [
         {
           "requestParam": "mock_token_type",
@@ -26,7 +26,7 @@
           "match": "custom",
           "claims": {
             "https://daml.com/ledger-api": {
-              "participantId": "${participantId}",
+              "applicationId": "mockauth-demo",
               "actAs": [
                 "${actAs}"
               ],
@@ -41,60 +41,8 @@
           "match": "custom-admin",
           "claims": {
             "https://daml.com/ledger-api": {
-              "participantId": "${participantId}",
-              "admin": true,
-              "actAs": [
-                "${actAs}"
-              ],
-              "readAs": [
-                "${readAs}"
-              ]
-            }
-          }
-        },
-        {
-          "requestParam": "mock_token_type",
-          "match": "custom-participant1-admin",
-          "claims": {
-            "https://daml.com/ledger-api": {
-              "participantId": "<<replace with participant id>>",
-              "admin": true,
-              "actAs": [
-                "<<replace with admin party id>>"
-              ],
-              "readAs": [
-                "<<replace with admin party id>>"
-              ]
-            }
-          }
-        },
-        {
-          "requestParam": "mock_token_type",
-          "match": "custom-participant1-scheduler",
-          "claims": {
-            "https://daml.com/ledger-api": {
-              "participantId": "<<replace with participant id>>",
-              "actAs": [
-                "<<replace with scheduler party id>>"
-              ],
-              "readAs": [
-                "<<replace with scheduler party id>>"
-              ]
-            }
-          }
-        },
-        {
-          "requestParam": "mock_token_type",
-          "match": "custom-participant1-contractor",
-          "claims": {
-            "https://daml.com/ledger-api": {
-              "participantId": "<<replace with participant id>>",
-              "actAs": [
-                "<<replace with contractor party id"
-              ],
-              "readAs": [
-                "<<replace with contractor party id"
-              ]
+              "applicationId": "mockauth-demo",
+              "admin": true
             }
           }
         }
