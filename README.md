@@ -19,9 +19,18 @@ This demo will enable you to:
 
 * Docker Desktop
 
-## Steps
+## Setup
+
+**Download** the code for the demo:
+
+```
+git clone https://github.com/wallacekelly-da/daml-public-demos.git --branch mock-oauth2-docker-compose mock-oauth2-docker-compose
+```
+
+## Demo Steps
 
 1. Peruse the Canton configuration.
+
    * [mydomain.conf](./configs/mydomain.conf), [participant1.conf](./configs/participant1.conf), and [participant2.conf](./configs/participant2.conf)
    * Notice that `participant1` does _not_ require a JWT; `participant2` _does_ require a JWT.
    * [bootstrap.canton](./configs/bootstrap.canton) allocates three parties and three users per participant node.
@@ -107,11 +116,15 @@ This demo will enable you to:
       > admin.token
    ```
 
-6. View the JWT:
+6. View the JWTs:
+
+   _For example, to view the audience-based token:_
 
    ```
    cat audience.token
    ```
+
+   _To view the token claims:_
 
    ```
    cat audience.token \
@@ -133,7 +146,7 @@ This demo will enable you to:
       --access-token-file audience.token
    ```
 
-8. Use the tokens with [grpcurl](https://github.com/fullstorydev/grpcurl/blob/master/README.md):
+8. Use the tokens with [grpcurl](https://github.com/fullstorydev/grpcurl/blob/master/README.md) to call the Ledger API:
 
    _The following will fail, for user `david`:_
 
