@@ -2,7 +2,7 @@ services:
 
   mydomain:
     container_name: mydomain
-    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.6
     volumes:
       - ./configs:/canton/host/configs:r
     command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container
@@ -15,7 +15,7 @@ services:
 
   participant1:
     container_name: participant1
-    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.6
     volumes:
       - ./configs:/canton/host/configs:r
       - ./.daml/dist/:/canton/host/dist/:r
@@ -42,6 +42,8 @@ services:
     image: postgres:16
     environment:
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_DATABASE=postgres
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready", "-d", "postgres" ]
     ports:
@@ -49,11 +51,13 @@ services:
 
   pqs1_scribe:
     container_name: pqs1_scribe
-    image: digitalasset-docker.jfrog.io/participant-query-store:0.1.0
+    image: digitalasset-docker.jfrog.io/participant-query-store:0.4.5
     volumes:
       - ./configs:/canton/host/configs:r
       - ./jars:/canton/host/jars:r
-    command: pipeline ledger postgres-document --config /canton/host/configs/pqs1_scribe.conf
+    command: pipeline ledger postgres-document --config /canton/host/configs/pqs1_scribe.conf --pipeline-datasource TransactionTreeStream 
+    environment:
+      - OTEL_JAVAAGENT_ENABLED=false
     depends_on:
       pqs1_db:
         condition: service_healthy
@@ -62,11 +66,11 @@ services:
 
   scripts:
     container_name: scripts
-    image: digitalasset/daml-sdk:2.8.1
+    image: digitalasset-docker.jfrog.io/daml-script:2.8.6
     volumes:
       - ./configs:/canton/host/configs:r
       - ./.daml/dist/:/canton/host/dist/:r
-    command: daml script --dar /canton/host/dist/demo-0.0.1.dar --all --ledger-host participant1 --ledger-port 5003
+    command: --dar /canton/host/dist/demo-0.0.1.dar --all --ledger-host participant1 --ledger-port 5003
     depends_on:
       participant1:
         condition: service_healthy

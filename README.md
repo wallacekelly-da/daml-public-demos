@@ -63,24 +63,27 @@ docker run -it --rm --network pqs-simple-docker-compose_default  --volume ./:/ho
 ```
 postgres=# \dt
                List of relations
- Schema |       Name        | Type  |  Owner
---------+-------------------+-------+----------
- public | Accept.123dj3po   | table | postgres
- public | Archive.11wnvoab  | table | postgres
- public | Bid.20ini8        | table | postgres
- public | BidRequest.sbovf0 | table | postgres
- public | PaintHouse.kcam2p | table | postgres
- public | Propose.x0zrvu    | table | postgres
- public | _archives         | table | postgres
- public | _creates          | table | postgres
- public | _creates_mappings | table | postgres
- public | _exercises        | table | postgres
- public | _mappings         | table | postgres
- public | _reassignments    | table | postgres
- public | _transactions     | table | postgres
- public | _watermark        | table | postgres
+ Schema |           Name           |       Type        |  Owner   
+--------+--------------------------+-------------------+----------
+ public | __contract_implements    | table             | postgres
+ public | __contract_tpe           | table             | postgres
+ public | __contracts              | partitioned table | postgres
+ public | __contracts_1            | table             | postgres
+ public | __contracts_2            | table             | postgres
+ public | __contracts_3            | table             | postgres
+ public | __events                 | table             | postgres
+ public | __exercise_tpe           | table             | postgres
+ public | __exercises              | partitioned table | postgres
+ public | __exercises_1            | table             | postgres
+ public | __exercises_2            | table             | postgres
+ public | __exercises_3            | table             | postgres
+ public | __packages               | table             | postgres
+ public | __tmp_archived_contracts | table             | postgres
+ public | __transactions           | table             | postgres
+ public | __watermark              | table             | postgres
+ public | flyway_schema_history    | table             | postgres
 
-postgres=# select payload->'acceptedBid'->'amount' as amount from "PaintHouse.kcam2p";
+postgres=# select payload->'acceptedBid'->'amount' as amount from "active"('PaintHouse');
 
       amount
 -------------------
