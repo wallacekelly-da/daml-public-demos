@@ -1,0 +1,65 @@
+services:
+
+  mydomain:
+    container_name: mydomain
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.9.3
+    volumes:
+      - ./configs:/canton/host/configs:r
+    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container
+    expose:
+      - 5001
+      - 5002
+    ports:
+      - 5001:5001
+      - 5002:5002
+
+  participant1:
+    container_name: participant1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.9.3
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/grpc_health_probe",
+          "--addr",
+          "participant1:5861"
+        ]
+    depends_on:
+      - mydomain
+    expose:
+      - 5003
+      - 5004
+    ports:
+      - 5003:5003
+      - 5004:5004
+
+  httpjson:
+    container_name: httpjson
+    image: digitalasset-docker.jfrog.io/http-json:2.9.3
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: --config "/canton/host/configs/myhttpjson.conf"
+    depends_on:
+      - participant1
+    expose:
+      - 7575
+    ports:
+      - 7575:7575
+
+  scripts:
+    container_name: scripts
+    image: digitalasset-docker.jfrog.io/daml-script:2.9.3
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: --dar /canton/host/dist/http-json-sample-0.0.1.dar --upload-dar yes --all --ledger-host participant1 --ledger-port 5003
+    depends_on:
+      participant1:
+        condition: service_healthy
+      httpjson:
+        condition: service_started

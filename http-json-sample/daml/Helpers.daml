@@ -1,0 +1,34 @@
+module Helpers (findOrAllocateParty) where
+
+import Daml.Script
+import DA.Optional (mapOptional)
+
+data FindPartyResult 
+  = Found Party
+  | NotFound
+  | MultipleFound
+
+findPartyInDetails : Text -> [PartyDetails] -> FindPartyResult
+findPartyInDetails displayName partyDetails = do
+  let rolePartyOptional partyDetails =
+        if partyDetails.displayName == Some (displayName)
+        then Some partyDetails.party
+        else None
+  case mapOptional rolePartyOptional partyDetails of
+    [p] -> Found p
+    [] -> NotFound 
+    _ -> MultipleFound
+
+findParty : Text -> Script FindPartyResult
+findParty displayName =
+  findPartyInDetails displayName <$> listKnownParties
+
+findOrAllocateParty : Text -> Script Party
+findOrAllocateParty displayName = do
+  result <- findParty displayName
+  case result of
+    Found party -> pure party
+    MultipleFound -> error $ "Multiple " <> displayName <> " parties found"
+    NotFound -> do
+      debug $ "Allocating party " <> displayName
+      allocatePartyWithHint displayName (PartyIdHint displayName)
