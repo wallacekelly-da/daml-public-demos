@@ -2,3 +2,7 @@
 .scalafmt.conf
 .metals
 .daml
+.vscode
+log/
+ui-backend-*.conf
+
