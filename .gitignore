@@ -2,3 +2,4 @@
 .scalafmt.conf
 .metals
 .daml
+.vscode
