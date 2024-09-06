@@ -1,0 +1,43 @@
+module Main where
+
+import Daml.Script
+import DA.Foldable (forA_)
+
+type AssetId = ContractId Asset
+
+template Asset
+  with
+    issuer : Party
+    name   : Text
+  where
+    ensure name /= ""
+    key (issuer, name) : (Party, Text)
+    maintainer key._1
+    signatory issuer
+
+getOrAllocateParty : Text -> Script Party
+getOrAllocateParty alias = do
+  result <- find (\d -> d.displayName == Some alias) <$> listKnownParties
+  case result of
+    None -> allocatePartyWithHint alias (PartyIdHint alias)
+    Some pd -> pure pd.party
+
+createAsset : Text -> Script AssetId
+createAsset name = script do
+  alice <- getOrAllocateParty "alice"
+  submit alice do
+    createCmd Asset with
+      issuer = alice
+      name
+
+createAssets : Script [AssetId]
+createAssets = script do
+  tv <- createAsset "TV"
+  car <- createAsset "Car"
+  pure [tv, car]
+
+inventoryAssets : Script ()
+inventoryAssets = script do
+  alice <- getOrAllocateParty "alice"
+  assets <- query @Asset alice
+  forA_ assets (\(_, a) -> debugRaw a.name)
