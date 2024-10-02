@@ -3,3 +3,6 @@
 .metals
 .daml
 .vscode
+**/log/canton.log
+**/log/canton_errors.log
+**/navigator.log
