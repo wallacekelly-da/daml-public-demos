@@ -2,7 +2,20 @@
 
 Related docs: <https://docs.daml.com/json-api/index.html>
 
+## Download the demo
+
+```
+git clone \
+  https://github.com/wallacekelly-da/daml-public-demos.git \
+  --branch http-json-sample \
+  --single-branch http-json-sample
+```
+
 ## Sample Commands
+
+Compile the Daml:
+
+`daml build`
 
 Start everything up:
 
