@@ -49,10 +49,17 @@ docker compose up adminer1 --detach
 
 docker compose up scripts
 
+# run the database functions, e.g., active()
+
 docker compose down
 ```
 
+## Adminer Screenshots
+
 ![](adminer-login.png)
+
+![](adminer-call.png)
+
 
 ## Additional Commands
 
