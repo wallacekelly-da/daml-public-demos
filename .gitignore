@@ -4,3 +4,7 @@
 .daml
 navigator.log
 .vscode
+log/
+.scala-build
+.bsp
+configs/mockauth.json
