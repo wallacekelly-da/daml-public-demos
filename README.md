@@ -52,6 +52,8 @@ docker compose up scripts
 docker compose down
 ```
 
+![](adminer-login.png)
+
 ## Additional Commands
 
 Open a `psql` console to the PQS.
