@@ -1,31 +1,8 @@
 module Main where
 
-template BidRequest
+template Asset
   with
-    owner : Party
-    painter : Party
+    owner: Party
+    desc: Text
   where
     signatory owner
-    observer painter
-    
-    choice Propose : ContractId Bid
-      with amount : Decimal
-      controller painter
-      do create Bid with request = this, ..
-
-template Bid
-  with
-    request : BidRequest
-    amount : Decimal
-  where
-    signatory request.owner, request.painter
-    
-    choice Accept : ContractId PaintHouse
-      controller request.owner
-      do create PaintHouse with acceptedBid = this
-
-template PaintHouse
-  with
-    acceptedBid : Bid
-  where
-    signatory (signatory acceptedBid)
