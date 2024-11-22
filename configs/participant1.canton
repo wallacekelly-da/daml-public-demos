@@ -1,5 +1,86 @@
-val thisNode = participants.local.head
-thisNode.domains.connect(thisNode.name, connection="http://mydomain:5001")
-thisNode.dars.upload("/canton/host/dist/demo-0.0.1.dar")
-thisNode.parties.enable(name="alice", displayName=Some("alice"))
-thisNode.parties.enable(name="bob", displayName=Some("bob"))
+import scala.tools.nsc.io.File
+
+val p = participants.local.head
+
+// basic setup
+p.domains.connect("mydomain", connection="http://mydomain:4201")
+p.dars.upload("/canton/host/dist/demo-0.0.1.dar")
+
+// party creation
+val aliceId = p.parties.enable("alice", waitForDomain = DomainChoice.All)
+val bobId = p.parties.enable("bob", waitForDomain = DomainChoice.All)
+val charlieId = p.parties.enable("charlie", waitForDomain = DomainChoice.All)
+
+// user creation
+p.ledger_api.users.create(
+  id = "pqs",
+  actAs = Set(),
+  readAs = Set(aliceId, bobId),
+  primaryParty = None,
+  participantAdmin = false,
+  isActive = true,
+  annotations = Map(
+    "description" -> "PQS User"
+  )
+)
+
+// create asset contracts
+val pkg = participant1.packages.find("Main").head
+
+def createAsset(partyId: PartyId, desc: String) {
+  p.ledger_api.commands.submit(Seq(partyId), Seq(
+    ledger_api_utils.create(
+      pkg.packageId, "Main", "Asset",
+      Map("owner" -> partyId, "desc" -> desc)
+    )
+  ))
+}
+
+createAsset(aliceId, "Alice's asset")
+createAsset(bobId, "Bob's asset")
+createAsset(charlieId, "Charlie's asset")
+
+// create mockauth.json file
+File("/canton/host/configs/mockauth.json").writeAll(s"""
+{
+  "tokenCallbacks": [
+    {
+      "issuerId": "mockissuer",
+      "tokenExpiry": 3600,
+      "requestMappings": [
+        {
+          "requestParam": "mockTokenType",
+          "match": "audience",
+          "claims": {
+            "aud": "https://daml.com/jwt/aud/participant/${p.id.uid.toProtoPrimitive}",
+            "sub": "pqs"
+          }
+        },
+        {
+          "requestParam": "mockTokenType",
+          "match": "scope",
+          "claims": {
+            "aud": "${p.id.uid.toProtoPrimitive}",
+            "sub": "pqs",
+            "scope": "daml_ledger_api"
+          }
+        },
+        {
+          "requestParam": "mockTokenType",
+          "match": "custom",
+          "claims": {
+            "https://daml.com/ledger-api": {
+              "admin": false,
+              "actAs": [],
+              "readAs": [
+                "${aliceId.toProtoPrimitive}",
+                "${bobId.toProtoPrimitive}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+""")

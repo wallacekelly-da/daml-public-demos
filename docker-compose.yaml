@@ -1,30 +1,11 @@
 services:
 
-  mockauth:
-    container_name: mockauth
-    image: ghcr.io/navikt/mock-oauth2-server:2.1.8
-    volumes:
-      - ./configs:/configs
-    environment:
-      - SERVER_PORT=80
-      - JSON_CONFIG_PATH=/configs/mockauth.json
-    expose:
-      - "80:80"
-    ports:
-      - "8081:80"
-
   mydomain:
     container_name: mydomain
     image: digitalasset-docker.jfrog.io/canton-enterprise:2.9.5
     volumes:
       - ./configs:/canton/host/configs:r
-    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container
-    expose:
-      - 5001
-      - 5002
-    ports:
-      - 5001:5001
-      - 5002:5002
+    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container --log-level-stdout INFO
 
   participant1:
     container_name: participant1
@@ -32,28 +13,29 @@ services:
     volumes:
       - ./configs:/canton/host/configs:r
       - ./.daml/dist/:/canton/host/dist/:r
-    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container --log-level-stdout INFO
     healthcheck:
-      test:
-        [
-          "CMD",
-          "/usr/local/bin/grpc_health_probe",
-          "--addr",
-          "participant1:5861"
-        ]
+      test: [ "CMD", "/usr/local/bin/grpc_health_probe", "--addr", "participant1:5861" ]
     depends_on:
       - mydomain
-      - mockauth
-    expose:
-      - 5003
-      - 5004
-    ports:
-      - 5003:5003
-      - 5004:5004
 
-  pqs1_db:
-    container_name: pqs1_db
-    image: postgres:16
+  mockauth:
+    container_name: mockauth
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+    volumes:
+      - ./configs:/configs
+    environment:
+      - SERVER_PORT=80
+      - JSON_CONFIG_PATH=/configs/mockauth.json
+    ports:
+      - "8081:80"
+    depends_on:
+      participant1:
+        condition: service_healthy
+
+  pqs_db:
+    container_name: pqs_db
+    image: postgres:15
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USERNAME=postgres
@@ -63,38 +45,29 @@ services:
     ports:
       - 5432:5432
 
-  pqs1_scribe:
-    container_name: pqs1_scribe
+  pqs:
+    container_name: pqs
     image: digitalasset-docker.jfrog.io/participant-query-store:0.5.0
     volumes:
       - ./configs:/canton/host/configs:r
-      - ./jars:/canton/host/jars:r
-    command: pipeline ledger postgres-document --config /canton/host/configs/pqs1_scribe.conf --pipeline-datasource TransactionTreeStream
+    command: pipeline ledger postgres-document --config /canton/host/configs/pqs.conf --pipeline-datasource TransactionTreeStream
     environment:
       - OTEL_JAVAAGENT_ENABLED=false
     depends_on:
-      pqs1_db:
+      pqs_db:
         condition: service_healthy
       participant1:
         condition: service_healthy
+      mockauth:
+        condition: service_started
 
-  scripts:
-    container_name: scripts
-    image: digitalasset-docker.jfrog.io/daml-script:2.9.5
-    volumes:
-      - ./configs:/canton/host/configs:r
-      - ./.daml/dist/:/canton/host/dist/:r
-    command: --dar /canton/host/dist/demo-0.0.1.dar --upload-dar yes --all --ledger-host participant1 --ledger-port 5003
-    depends_on:
-      participant1:
-        condition: service_healthy
-
-  adminer1:
-    container_name: adminer1
+  adminer:
+    container_name: adminer
     image: adminer
     depends_on:
-      - pqs1_db
+      - pqs_db
+      - pqs
     environment:
-      - ADMINER_DEFAULT_SERVER=pqs1_db
+      - ADMINER_DEFAULT_SERVER=pqs_db
     ports:
       - 8080:8080
