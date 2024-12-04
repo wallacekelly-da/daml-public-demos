@@ -13,5 +13,5 @@ end;
 $$ language plpgsql;
 
 create or replace trigger pqs_watermark_trigger
-  after insert or update or delete on _watermark
+  after insert or update or delete on __watermark
   for each row execute function pqs_watermark_trigger_func();

@@ -50,7 +50,10 @@ Check that node is installed:
 
 ```
 > node --version
-v16.20.2
+v22.8.0
+
+> npm --version
+10.8.2
 ```
 
 Run the demo:
@@ -66,7 +69,7 @@ docker compose up setup
 # use http://localhost:8080 to explore the db
 
 # start the Javascript listener
-node install
+npm install
 node listener.js
 
 # create contracts on the ledger
@@ -86,7 +89,7 @@ docker compose down
 Open a `psql` console to Postgres.
 
 ```
-docker run -it --rm --network pqs-postgres-notify-listen_default --volume ./:/host/ postgres:16 psql --host=pqs1_db --username=postgres --dbname=postgres
+docker run -it --rm --network pqs-postgres-notify-listen_default --volume ./:/host/ postgres:15 psql --host=pqs1_db --username=postgres --dbname=postgres
 ```
 
 ```

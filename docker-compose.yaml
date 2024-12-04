@@ -2,7 +2,7 @@ services:
 
   mydomain:
     container_name: mydomain
-    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.9.5
     volumes:
       - ./configs:/canton/host/configs:r
     command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container
@@ -15,7 +15,7 @@ services:
 
   participant1:
     container_name: participant1
-    image: digitalasset-docker.jfrog.io/canton-enterprise:2.8.1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.9.5
     volumes:
       - ./configs:/canton/host/configs:r
       - ./.daml/dist/:/canton/host/dist/:r
@@ -59,7 +59,7 @@ services:
 
   pqs1_scribe:
     container_name: pqs1_scribe
-    image: digitalasset-docker.jfrog.io/participant-query-store:0.1.0
+    image: digitalasset-docker.jfrog.io/participant-query-store:0.5.0
     volumes:
       - ./configs:/canton/host/configs:r
     command: pipeline ledger postgres-document --config /canton/host/configs/pqs1_scribe.conf
@@ -73,7 +73,7 @@ services:
 
   setup:
     container_name: setup
-    image: postgres:16
+    image: postgres:15
     volumes:
       - ./:/host/
     environment:
@@ -82,7 +82,7 @@ services:
 
   contracts:
     container_name: scripts
-    image: digitalasset/daml-sdk:2.8.1
+    image: digitalasset/daml-sdk:2.9.5
     volumes:
       - ./configs:/canton/host/configs:r
       - ./.daml/dist/:/canton/host/dist/:r
