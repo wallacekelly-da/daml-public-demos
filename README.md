@@ -30,6 +30,7 @@ The demo instantiates a Canton domain and participant node. The participant node
 * Creates one user: `pqs` (with read-as permissions to `alice` and `bob`).
 * Creates three contracts -- one for each party.
 * Creates a configuration files for the mock-oauth2-server.
+* Creates a configuration file for the PQS.
 
 The participant node is [configured](./configs/participant1.conf) with auth-services:
 
@@ -56,17 +57,25 @@ curl --location 'http://localhost:8081/mockissuer/token' \
     --data-urlencode 'grant_type=client_credentials' \
     --data-urlencode 'client_id=ignored-by-mock' \
     --data-urlencode 'client_secret=ignored-by-mock' \
+    --data-urlencode 'audience=participant1::122038...' \
+    --data-urlencode 'scope=daml_ledger_api' \
     --data-urlencode 'mockTokenType=audience'
 ```
 
 ### PQS
 
-The demo instantiates a PQS instance [configured](./configs/pqs.conf) to retrieve tokens from the mock-oauth2-server.
+The demo instantiates a PQS instance configured to retrieve tokens from the mock-oauth2-server.
 
 The demo instantiates an [Adminer](https://www.adminer.org/) instance as a simple (and optional) way to explore the PQS's Postgres database.
 Adminer is served on host port 8080.
 
 As an alternative to Adminer, you can use psql, pgAdmin, DBeaver, or whatever SQL client you prefer. The PQS's Postgres database is available on port 5432, database `postgres`, user `postgres`, password `postgres`.
+
+Here is a sample query:
+
+```
+select payload->>'desc' as asset, signatories from active();
+```
 
 ## Sample Tokens
 
@@ -131,7 +140,6 @@ eyJraWQiOiJtb2NraXNzdWVyIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJodHRwczovL2Rhb
 }
 ```
 
-
 ## Running the Demo
 
 Checkout the demo:
@@ -162,6 +170,11 @@ docker compose up --detach adminer
 # explore the database (http://localhost:8080/)
 # using the screenshots below for Adminer login
 # and for a sample query.
+
+# select payload->>'desc' as asset, signatories from active();
+
+# Notice that the contracts for alice and bob
+# have been copied into the PQS database.
 
 docker compose down
 ```

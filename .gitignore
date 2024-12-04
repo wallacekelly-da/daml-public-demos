@@ -8,3 +8,4 @@ log/
 .scala-build
 .bsp
 configs/mockauth.json
+configs/pqs.conf

@@ -52,7 +52,7 @@ File("/canton/host/configs/mockauth.json").writeAll(s"""
           "requestParam": "mockTokenType",
           "match": "audience",
           "claims": {
-            "aud": "https://daml.com/jwt/aud/participant/${p.id.uid.toProtoPrimitive}",
+            "aud": "https://daml.com/jwt/aud/participant/$${audience}",
             "sub": "pqs"
           }
         },
@@ -60,9 +60,9 @@ File("/canton/host/configs/mockauth.json").writeAll(s"""
           "requestParam": "mockTokenType",
           "match": "scope",
           "claims": {
-            "aud": "${p.id.uid.toProtoPrimitive}",
+            "aud": "$${audience}",
             "sub": "pqs",
-            "scope": "daml_ledger_api"
+            "scope": "$${scope}"
           }
         },
         {
@@ -82,5 +82,36 @@ File("/canton/host/configs/mockauth.json").writeAll(s"""
       ]
     }
   ]
+}
+""")
+
+
+// create mockauth.json file
+File("/canton/host/configs/pqs.conf").writeAll(s"""
+{
+  source {
+    ledger {
+      host = "participant1"
+      port = 4001
+      auth = "OAuth"
+    }
+  }
+  pipeline {
+    oauth {
+      clientId = "ignored-by-mock"
+      clientSecret = "ignored-by-mock"
+      endpoint = "http://mockauth/mockissuer/token"
+      parameters {
+        mockTokenType = "audience"
+        audience = "${p.id.uid.toProtoPrimitive}"
+      }
+      scope = "daml_ledger_api"
+    }
+  }
+  target {
+    postgres {
+      host = "pqs_db"
+    }
+  }
 }
 """)
