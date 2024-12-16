@@ -21,13 +21,7 @@ services:
       - ./.daml/dist/:/canton/host/dist/:r
     command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container
     healthcheck:
-      test:
-        [
-          "CMD",
-          "/usr/local/bin/grpc_health_probe",
-          "--addr",
-          "participant1:5861"
-        ]
+      test: [ "CMD", "/usr/local/bin/grpc_health_probe", "--addr", "participant1:5861" ]
     depends_on:
       - mydomain
     expose:
@@ -51,7 +45,7 @@ services:
 
   pqs1_scribe:
     container_name: pqs1_scribe
-    image: digitalasset-docker.jfrog.io/participant-query-store:0.5.0
+    image: digitalasset-docker.jfrog.io/participant-query-store:0.5.4
     volumes:
       - ./configs:/canton/host/configs:r
       - ./jars:/canton/host/jars:r
