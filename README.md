@@ -66,36 +66,47 @@ docker compose down
 Open a `psql` console to the PQS.
 
 ```
-docker run -it --rm --network pqs-simple-docker-compose_default  --volume ./:/host/ postgres:16 psql --host=pqs1_db --username=postgres postgres
+docker run -it --rm \
+  --network pqs-simple-docker-compose_default \
+  --volume ./:/host/ \
+  postgres:16 psql \
+  --host=pqs1_db \
+  --username=postgres
 ```
 
 ```
-postgres=# \dt
-               List of relations
- Schema |           Name           |       Type        |  Owner   
---------+--------------------------+-------------------+----------
- public | __contract_implements    | table             | postgres
- public | __contract_tpe           | table             | postgres
- public | __contracts              | partitioned table | postgres
- public | __contracts_1            | table             | postgres
- public | __contracts_2            | table             | postgres
- public | __contracts_3            | table             | postgres
- public | __events                 | table             | postgres
- public | __exercise_tpe           | table             | postgres
- public | __exercises              | partitioned table | postgres
- public | __exercises_1            | table             | postgres
- public | __exercises_2            | table             | postgres
- public | __exercises_3            | table             | postgres
- public | __packages               | table             | postgres
- public | __tmp_archived_contracts | table             | postgres
- public | __transactions           | table             | postgres
- public | __watermark              | table             | postgres
- public | flyway_schema_history    | table             | postgres
+select
+  payload->'acceptedBid'->'request'->'painter' as painter,
+  payload->'acceptedBid'->'amount' as amount
+from active('demo:Main:PaintHouse');
 
-postgres=# select payload->'acceptedBid'->'amount' as amount from "active"('PaintHouse');
-
-      amount
--------------------
- "1000.0000000000"
+                                   painter                                   |     bidamount
+-----------------------------------------------------------------------------+-------------------
+ "bob::12202091b729aa5575bc96922be699379b92881cdb233d1942adc5847672093d07d6" | "1000.0000000000"
 (1 row)
+```
+
+```
+postgres=# \x on
+postgres=# \df
+
+     :
+     :
+-[ RECORD 23 ]------+----------------------------------------------------------------------------------------------------------------
+Schema              | public
+Name                | active
+Result data type    | SETOF contract
+Argument data types | qname text DEFAULT NULL::text, at_offset text DEFAULT latest_offset()
+Type                | func
+-[ RECORD 24 ]------+----------------------------------------------------------------------------------------------------------------
+Schema              | public
+Name                | archives
+Result data type    | SETOF contract
+Argument data types | qname text DEFAULT NULL::text, from_offset text DEFAULT oldest_offset(), to_offset text DEFAULT latest_offset()
+Type                | func
+     :
+     :
+
+postgres=# \x off
+postgres=# \quit
 ```
