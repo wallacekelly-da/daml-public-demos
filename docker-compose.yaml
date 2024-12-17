@@ -48,7 +48,6 @@ services:
     image: digitalasset-docker.jfrog.io/participant-query-store:0.5.4
     volumes:
       - ./configs:/canton/host/configs:r
-      - ./jars:/canton/host/jars:r
     command: pipeline ledger postgres-document --config /canton/host/configs/pqs1_scribe.conf --pipeline-datasource TransactionTreeStream
     environment:
       - OTEL_JAVAAGENT_ENABLED=false
