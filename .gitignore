@@ -4,3 +4,5 @@
 .daml
 navigator.log
 .vscode
+shell.log
+daml-shell.jar

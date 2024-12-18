@@ -61,6 +61,46 @@ docker compose down
 ![](adminer-call.png)
 
 
+## Daml Shell Commands
+
+Start the Daml Shell inside the network, using `docker compose`.
+
+```
+docker compose run daml_shell
+```
+
+Or start the Daml Shell from the host using `docker run`.
+
+```
+docker run -it --rm \
+  --volume ./:/host/ \
+  digitalasset-docker.jfrog.io/daml-shell:0.1.6 \
+  --config /host/configs/daml-shell.conf \
+  --postgres-host host.docker.internal
+```
+
+Or start Daml Shell using the JAR file.
+
+```
+curl -H "X-JFrog-Art-Api:<apikey>" \
+   -O https://digitalasset.jfrog.io/artifactory/daml-shell/v0.1.6/daml-shell.jar
+
+java -jar ./daml-shell.jar \
+  --config ./configs/daml-shell.conf \
+  --postgres-host 127.0.0.1
+```
+
+
+
+Try various commands.
+
+```
+help
+
+connect jdbc:postgresql://pqs1_db:5432/?user=postgres&password=postgres
+
+
+
 ## Additional Commands
 
 Open a `psql` console to the PQS.

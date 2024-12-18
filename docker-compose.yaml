@@ -41,7 +41,7 @@ services:
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -d postgres -U postgres" ]
     ports:
-      - 5432:5432
+      - 127.0.0.1:5432:5432
 
   pqs1_scribe:
     container_name: pqs1_scribe
@@ -77,3 +77,13 @@ services:
       - ADMINER_DEFAULT_SERVER=pqs1_db
     ports:
       - 8080:8080
+
+  daml_shell:
+    container_name: daml-shell
+    image: digitalasset-docker.jfrog.io/daml-shell:0.1.6
+    volumes:
+      - ./configs:/canton/host/configs:r
+    command: --config /canton/host/configs/daml-shell.conf
+    depends_on:
+      pqs1_db:
+        condition: service_healthy
