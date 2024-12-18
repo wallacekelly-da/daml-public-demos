@@ -98,7 +98,7 @@ Try various commands.
 help
 
 connect jdbc:postgresql://pqs1_db:5432/?user=postgres&password=postgres
-
+```
 
 
 ## Additional Commands
