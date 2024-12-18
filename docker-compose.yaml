@@ -39,7 +39,7 @@ services:
       - POSTGRES_USERNAME=postgres
       - POSTGRES_DATABASE=postgres
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready", "-d", "postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -d postgres -U postgres" ]
     ports:
       - 5432:5432
 
