@@ -3,6 +3,17 @@ module Scripts where
 import Daml.Script
 import Main
 import Helpers
+import DA.Time
+import DA.Date
+
+getBidAmount : Script Decimal
+getBidAmount = script do
+  t1 <- getTime
+  let t0 = time (date 2024 Dec 18) 09 50 00
+      rt = subTime t1 t0
+      ms = convertRelTimeToMicroseconds rt
+  pure $ intToDecimal $ ms % 999 + 1000
+
 
 happy_path : Script ()
 happy_path = script do
@@ -15,9 +26,10 @@ happy_path = script do
     createCmd BidRequest with owner = alice, painter = bob
 
   debug "Bob submitting a proposal..."
+  amount <- getBidAmount
   cidBid <- submit bob do
-    exerciseCmd cidBidRequest Propose with amount = 1000.0
- 
+    exerciseCmd cidBidRequest Propose with ..
+
   debug "Alice accepting the proposal..."
   cidPaintHouse <- submit alice do
     exerciseCmd cidBid Accept
