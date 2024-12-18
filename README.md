@@ -66,7 +66,7 @@ docker compose down
 Start the Daml Shell inside the network, using `docker compose`.
 
 ```
-docker compose run daml_shell
+docker compose run --rm daml_shell
 ```
 
 Or start the Daml Shell from the host using `docker run`.
