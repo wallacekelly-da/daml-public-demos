@@ -1,4 +1,4 @@
-module Helpers (findOrAllocateParty) where
+module Helpers (findOrAllocateParty, findOrAllocateUser) where
 
 import Daml.Script
 import DA.Optional (mapOptional)
@@ -27,8 +27,27 @@ findOrAllocateParty : Text -> Script Party
 findOrAllocateParty displayName = do
   result <- findParty displayName
   case result of
-    Found party -> pure party
+    Found party -> do
+      debug $ "Found party " <> displayName
+      pure party
     MultipleFound -> error $ "Multiple " <> displayName <> " parties found"
     NotFound -> do
       debug $ "Allocating party " <> displayName
       allocatePartyWithHint displayName (PartyIdHint displayName)
+
+findOrAllocateUser : Text -> Script (Party, UserId)
+findOrAllocateUser displayName =
+  do
+    party <- findOrAllocateParty displayName
+    users <- listAllUsers 
+    let isMatch u = u.primaryParty == Some party
+        user = find isMatch users
+    case user of
+      Some u -> do
+        debug $ "Found user " <> show u.userId
+        pure (party, u.userId)
+      None -> do
+        userId <- validateUserId displayName
+        debug $ "Creating user " <> show userId
+        createUser (User userId (Some party)) [CanActAs party]
+        pure (party, userId)

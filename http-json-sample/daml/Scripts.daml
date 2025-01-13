@@ -7,19 +7,19 @@ import Helpers
 happy_path : Script ()
 happy_path = script do
 
-  alice <- findOrAllocateParty "alice"
-  bob <- findOrAllocateParty "bob"
+  (alice, aliceUserId) <- findOrAllocateUser "alice"
+  (bob, bobUserId) <- findOrAllocateUser "bob"
 
   debugRaw "Alice creating a bid request..."
-  cidBidRequest <- submit alice do
+  cidBidRequest <- submitUser aliceUserId do
     createCmd BidRequest with owner = alice, painter = bob
 
   debugRaw "Bob submitting a proposal..."
-  cidBid <- submit bob do
+  cidBid <- submitUser bobUserId do
     exerciseCmd cidBidRequest Propose with amount = 1000.0
  
   debugRaw "Alice accepting the proposal..."
-  cidPaintHouse <- submit alice do
+  cidPaintHouse <- submitUser aliceUserId do
     exerciseCmd cidBid Accept
   
   pure ()
