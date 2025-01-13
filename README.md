@@ -2,8 +2,6 @@
 
 Each demo is in its own Git branch.
 
-## Upgrade Demo
+## Obsolete
 
-### Folders
-
-* **Loans**, the initial Daml models
+This demo was never finished.
