@@ -18,7 +18,7 @@ git clone \
 CD into the folder.
 
 ```
-cd smart-contract-upgrades
+cd smart-contract-upgrades/smart-contract-upgrades
 ```
 
 Install the SDK.
@@ -58,7 +58,7 @@ docker compose pull
 Start the demo.
 
 ```
-docker compose up --detach httpjson1
+docker compose up --detach participant1
 ```
 
 Confirm the Ledger API is up-and-running.
@@ -70,23 +70,7 @@ grpcurl \
   com.daml.ledger.api.v1.LedgerIdentityService.GetLedgerIdentity
 ```
 
-Confirm the HTTP JSON API is up-and-running.
-
-```
-curl http://localhost:7575/readyz
-```
-
 ## Step 1 - Create the initial contracts
-
-Create contracts.
-
-```
-daml script \
-  --ledger-host localhost \
-  --ledger-port 4001 \
-  --dar Assets1/AssetModels/.daml/dist/AssetModels-0.0.1.dar \
-  --script-name Assets:setup
-```
 
 Get the party ids.
 
@@ -96,23 +80,101 @@ daml ledger list-parties \
   --port 4001
 ```
 
-Replace the party id in [filter-by-alice.json](./queries/filter-by-alice.json).
+Replace the party id in [get-transactions.json](./queries/get-transactions.json).
 
-Get the contracts.
+Get the package id.
 
 ```
-cat queries/filter-by-alice.json | \
+daml damlc inspect-dar --json \
+  Assets1/AssetModels/.daml/dist/AssetModels-0.0.1.dar \
+  | grep main_package_id
+```
+
+Replace the package id in [get-transactions.json](./queries/get-transactions.json).
+
+Subscribe to the transactions.
+
+```
+cat queries/get-transactions.json | \
   grpcurl \
     -plaintext \
     -d @ \
     localhost:4001 \
-    com.daml.ledger.api.v1.ActiveContractsService.GetActiveContracts
+    com.daml.ledger.api.v1.TransactionService.GetTransactions
 ```
 
-```
-export TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpZ25vcmVkIiwic3ViIjoiYWxpY2UiLCJhdWQiOiJodHRwczovL2RhbWwuY29tL2p3dC9hdWQvcGFydGljaXBhbnQvcGFydGljaXBhbnQxIn0.l9xKl0HZEaWx59dtfot3Uvf3v2ApW7xXOtYmW8-wNzM'
+Create a contract.
 
-curl http://localhost:7575/v1/query \
-   --header 'Authorization: Bearer '"${TOKEN}" \
-   | jq
 ```
+daml script \
+  --ledger-host localhost \
+  --ledger-port 4001 \
+  --dar Assets1/AssetModels/.daml/dist/AssetModels-0.0.1.dar \
+  --script-name Assets:setup
+```
+
+In [get-transactions.json](./queries/get-transactions.json), replace the package-id with `#AssetModels`.
+
+Create a second contract.
+
+## Step 2 - Deploy a new version
+
+Upload the v2 DAR file.
+
+```
+daml ledger upload-dar \
+  --host localhost \
+  --port 4001 \
+  Assets2/AssetModels/.daml/dist/AssetModels-0.0.2.dar
+```
+
+Create a v2 contract.
+
+```
+daml script \
+  --ledger-host localhost \
+  --ledger-port 4001 \
+  --dar Assets2/AssetModels/.daml/dist/AssetModels-0.0.2.dar \
+  --script-name Assets:setup
+```
+
+Notice the following:
+
+* When the Daml Script queried for assets, it retrieved and displayed all the assets.
+* The new field is defaulted with `None`.
+* The new contract was streamed to GetTransactions.
+
+## Step 3 - Exercise new choices
+
+Exercise the new, _non-consuming_ `GetSummary` choice.
+
+```
+daml script \
+  --ledger-host localhost \
+  --ledger-port 4001 \
+  --dar Assets2/AssetModels/.daml/dist/AssetModels-0.0.2.dar \
+  --script-name Assets:getSummaries
+```
+
+Notice the following:
+
+* The new choice was called on the old contracts.
+* No create events occurred on the transaction stream.  
+  (the old contracts were not converted to new contracts)
+
+Exercise the _consuming_ `ReturnIt` choice on all the contracts.
+
+```
+daml script \
+  --ledger-host localhost \
+  --ledger-port 4001 \
+  --dar Assets2/AssetModels/.daml/dist/AssetModels-0.0.2.dar \
+  --script-name Assets:returnAll
+```
+
+Notice the following:
+
+* The new choice was exercised on all contracts, including v1 contracts.  
+  (all assets have been returned to `alice`.)
+* The old contracts were archived. Version 2 contracts were created.  
+  (as can be seen on the contract stream.)

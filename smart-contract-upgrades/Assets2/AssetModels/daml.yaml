@@ -5,10 +5,12 @@ sdk-version: 2.10.0-rc1
 name: AssetModels
 source: daml
 init-script: Assets:setup
-version: 0.0.1
+version: 0.0.2
 dependencies:
   - daml-prim
   - daml-stdlib
   - daml-script-lts
 build-options:
   - --target=1.17
+typecheck-upgrades: true
+upgrades: ../../Assets1/AssetModels/.daml/dist/AssetModels-0.0.1.dar
