@@ -1,4 +1,4 @@
-module Helpers (findOrAllocateParty, findOrAllocateUser) where
+module Helpers (findOrAllocateParty, findOrAllocateUser, getDisplayName) where
 
 import Daml.Script
 import DA.Optional (mapOptional)
@@ -12,7 +12,7 @@ data FindPartyResult
 findPartyInDetails : Text -> [PartyDetails] -> FindPartyResult
 findPartyInDetails displayName partyDetails = do
   let rolePartyOptional partyDetails =
-        if partyDetails.displayName == Some (displayName)
+        if (asciiToLower <$> partyDetails.displayName) == Some (asciiToLower displayName)
         then Some partyDetails.party
         else None
   case mapOptional rolePartyOptional partyDetails of
@@ -34,7 +34,7 @@ findOrAllocateParty displayName = do
     MultipleFound -> error $ "Multiple " <> displayName <> " parties found"
     NotFound -> do
       debugRaw $ "Allocating party " <> displayName
-      allocatePartyWithHint (asciiToLower displayName) (PartyIdHint displayName)
+      allocatePartyWithHint displayName (PartyIdHint (asciiToLower displayName))
 
 findOrAllocateUser : Text -> Script (Party, UserId)
 findOrAllocateUser displayName =
@@ -52,3 +52,10 @@ findOrAllocateUser displayName =
         debugRaw $ "Creating user " <> show userId
         createUser (User userId (Some party)) [CanActAs party]
         pure (party, userId)
+
+getDisplayName : Party -> Script Text
+getDisplayName party = script do
+  partyDetails <- listKnownParties
+  case displayName <$> (find (\pd -> pd.party == party) partyDetails) of
+    Some (Some n) -> pure n
+    _ -> pure $ show party
