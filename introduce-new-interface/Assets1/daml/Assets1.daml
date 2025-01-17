@@ -1,8 +1,5 @@
 module Assets1 where
 
-import Daml.Script
-import Helpers
-
 type AssetId = ContractId Asset1
 
 template Asset1
@@ -22,18 +19,14 @@ template Asset1
       do create this with
            owner = newOwner
 
-setup : Script ()
-setup = script do
-  (alice, _aliceId) <- findOrAllocateUser "Alice"
-  (bob, _bobId) <- findOrAllocateUser "Bob"
 
-  aliceTV <- submit alice do
-    createCmd Asset1 with
-      issuer = alice
-      owner = alice
-      name = "TV"
+-- testParties : Script ()
+-- testParties = script do
 
-  _bobTV <- submit alice do
-    exerciseCmd aliceTV Give with newOwner = bob
+--   p1 <- allocatePartyWithHint "" (PartyIdHint "Alice")
+--   p2 <- allocatePartyWithHint "Alice" (PartyIdHint "alice")
+  
+--   parties <- listKnownParties
+--   forA_ parties (\p -> debug p)
 
-  pure()
+--   pure()

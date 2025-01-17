@@ -1,8 +1,5 @@
 module Assets2 where
 
-import Daml.Script
-import Helpers
-
 type AssetId = ContractId Asset2
 
 template Asset2
@@ -23,20 +20,3 @@ template Asset2
       controller owner
       do create this with
            owner = newOwner
-
-setup : Script ()
-setup = script do
-  (alice, _aliceId) <- findOrAllocateUser "Alice"
-  (charlie, _charlie) <- findOrAllocateUser "Charlie"
-
-  aliceDVDs <- submit alice do
-    createCmd Asset2 with
-      issuer = alice
-      owner = alice
-      desc = "discs"
-      num = 5
-
-  _charlieDVDs <- submit alice do
-    exerciseCmd aliceDVDs Give with newOwner = charlie
-
-  pure()
