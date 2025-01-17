@@ -2,6 +2,7 @@ module Helpers (findOrAllocateParty, findOrAllocateUser) where
 
 import Daml.Script
 import DA.Optional (mapOptional)
+import DA.Text (asciiToLower)
 
 data FindPartyResult 
   = Found Party
@@ -33,7 +34,7 @@ findOrAllocateParty displayName = do
     MultipleFound -> error $ "Multiple " <> displayName <> " parties found"
     NotFound -> do
       debugRaw $ "Allocating party " <> displayName
-      allocatePartyWithHint displayName (PartyIdHint displayName)
+      allocatePartyWithHint (asciiToLower displayName) (PartyIdHint displayName)
 
 findOrAllocateUser : Text -> Script (Party, UserId)
 findOrAllocateUser displayName =
