@@ -4,7 +4,7 @@
 sdk-version: 2.6.5
 name: Assets1
 source: daml
-init-script: Main:setup
+init-script: Assets1:setup
 version: 0.0.1
 dependencies:
   - daml-prim
