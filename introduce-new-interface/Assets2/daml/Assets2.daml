@@ -9,11 +9,14 @@ template Asset2
   with
     issuer : Party
     owner  : Party
-    name   : Text
+    desc   : Text
+    num    : Int
   where
-    ensure name /= ""
+    ensure desc /= ""
+           && num > 0
     signatory issuer
     observer owner
+
     choice Give : AssetId
       with
         newOwner : Party
@@ -21,19 +24,19 @@ template Asset2
       do create this with
            owner = newOwner
 
-setup : Script AssetId
+setup : Script ()
 setup = script do
   (alice, _aliceId) <- findOrAllocateUser "Alice"
-  (bob, _bobId) <- findOrAllocateUser "Bob"
+  (charlie, _charlie) <- findOrAllocateUser "Charlie"
 
-  aliceTV <- submit alice do
+  aliceDVDs <- submit alice do
     createCmd Asset2 with
       issuer = alice
       owner = alice
-      name = "TV"
+      desc = "discs"
+      num = 5
 
-  bobTV <- submit alice do
-    exerciseCmd aliceTV Give with newOwner = bob
+  _charlieDVDs <- submit alice do
+    exerciseCmd aliceDVDs Give with newOwner = charlie
 
-  submit bob do
-    exerciseCmd bobTV Give with newOwner = alice
+  pure()

@@ -14,6 +14,7 @@ template Asset1
     ensure name /= ""
     signatory issuer
     observer owner
+
     choice Give : AssetId
       with
         newOwner : Party
@@ -21,7 +22,7 @@ template Asset1
       do create this with
            owner = newOwner
 
-setup : Script AssetId
+setup : Script ()
 setup = script do
   (alice, _aliceId) <- findOrAllocateUser "Alice"
   (bob, _bobId) <- findOrAllocateUser "Bob"
@@ -32,8 +33,7 @@ setup = script do
       owner = alice
       name = "TV"
 
-  bobTV <- submit alice do
+  _bobTV <- submit alice do
     exerciseCmd aliceTV Give with newOwner = bob
 
-  submit bob do
-    exerciseCmd bobTV Give with newOwner = alice
+  pure()
