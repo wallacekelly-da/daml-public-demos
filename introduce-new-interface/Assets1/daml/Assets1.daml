@@ -1,4 +1,4 @@
-module Main where
+module Assets1 where
 
 import Daml.Script
 import Helpers
