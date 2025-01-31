@@ -60,6 +60,21 @@ cd Assets1
 daml start
 ```
 
+The output includes:
+
+```
+TV created and given to Bob.
+```
+
+Store away Alice's party id:
+
+```
+export DEMO_ALICE=$(grpcurl --plaintext localhost:6865 \
+  com.daml.ledger.api.v1.admin.PartyManagementService.ListKnownParties \
+  | jq -r '.party_details[] | select(.party | startswith("alice::")) | .party')
+```
+
+
 ## Deploy changes
 
 Build the Assets2 project.
@@ -86,6 +101,20 @@ daml script \
   --script-name Scripts:setup
 ```
 
+The output includes:
+
+```
+DVDs created and given to Charlie
+```
+
+Store away the new package id:
+
+```
+export DEMO_PACKAGEID=$(daml damlc inspect-dar --json \
+  .daml/dist/Assets2-0.0.2.dar \
+  | jq -r '.main_package_id')
+```
+
 ## Query for both Asset1 and Asset2 contracts
 
 Notice the implementation of the [`listAssets` script](./Assets2/daml/Scripts.daml)
@@ -100,6 +129,50 @@ daml script \
   --ledger-port 6865 \
   --dar .daml/dist/Assets2-0.0.2.dar \
   --script-name Scripts:listAssets
+```
+
+The output includes information about both an `Asset1` contract and an `Asset2` contract.
+A default quantity of `1` has been returned for the `Asset1` contract.
+
+```
+Asset1: Bob's 1 TV
+Asset2: Charlie's 5 discs
+```
+
+Store away the current ledger offset:
+
+```
+export DEMO_OFFSET=$(grpcurl --plaintext localhost:6865 \
+  com.daml.ledger.api.v1.TransactionService.GetLedgerEnd \
+  | jq -r '.offset.absolute')
+```
+
+Query for any contracts which implement `IAsset`.
+
+```
+cat GetActiveContracts.json \
+  | envsubst \
+  | grpcurl --plaintext -d @ \
+      localhost:6865 \
+      com.daml.ledger.api.v1.ActiveContractsService.GetActiveContracts \
+  | jq -f GetActiveContracts.jq
+```
+
+The results:
+
+```json
+{
+  "owner": "bob::12203...",
+  "id": "TV",
+  "quantity": "1",
+  "version": "1"
+}
+{
+  "owner": "charlie::12203...",
+  "id": "discs",
+  "quantity": "5",
+  "version": "2"
+}
 ```
 
 ## Exercise a choice on both Asset1 and Asset2 contracts
@@ -129,35 +202,14 @@ daml script \
   --script-name Scripts:listAssets
 ```
 
-## Sample CLI commands
-
-Get the `alice` party id.
-
-```
-export DEMO_ALICE=$(grpcurl --plaintext localhost:6865 \
-  com.daml.ledger.api.v1.admin.PartyManagementService.ListKnownParties \
-  | jq -r '.party_details[] | select(.party | startswith("alice::")) | .party')
-```
-
-Get the ledger end offset.
+Confirm the same results with `grpcurl`:
 
 ```
 export DEMO_OFFSET=$(grpcurl --plaintext localhost:6865 \
   com.daml.ledger.api.v1.TransactionService.GetLedgerEnd \
   | jq -r '.offset.absolute')
-```
 
-Get the package id for Assets2.
 
-```
-export DAML_PACKAGEID=$(daml damlc inspect-dar --json \
-  .daml/dist/Assets2-0.0.2.dar \
-  | jq -r '.main_package_id')
-```
-
-Query for any contracts which implement `IAsset`.
-
-```
 cat GetActiveContracts.json \
   | envsubst \
   | grpcurl --plaintext -d @ \
