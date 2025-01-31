@@ -18,15 +18,3 @@ template Asset1
       controller owner
       do create this with
            owner = newOwner
-
-
--- testParties : Script ()
--- testParties = script do
-
---   p1 <- allocatePartyWithHint "" (PartyIdHint "Alice")
---   p2 <- allocatePartyWithHint "Alice" (PartyIdHint "alice")
-  
---   parties <- listKnownParties
---   forA_ parties (\p -> debug p)
-
---   pure()

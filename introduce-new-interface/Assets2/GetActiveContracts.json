@@ -1,0 +1,23 @@
+{
+  "verbose": true,
+  "active_at_offset": "${DEMO_OFFSET}",
+  "filter": {
+    "filters_by_party": {
+      "${DEMO_ALICE}": {
+        "inclusive": {
+          "interface_filters": [
+            {
+              "include_interface_view": true,
+              "include_create_arguments_blob": true,
+              "interface_id": {
+                "package_id": "${DEMO_PACKAGEID}",
+                "module_name": "Interfaces",
+                "entity_name": "IAsset"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

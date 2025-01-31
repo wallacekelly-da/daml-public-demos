@@ -38,8 +38,8 @@ listAssets = script do
                   <> a.id
     )
 
-takeBackAll : Script ()
-takeBackAll = script do
+takeBackAssets : Script ()
+takeBackAssets = script do
   (alice, _aliceId) <- findOrAllocateUser "Alice"
   
   assets <- queryInterface @IAsset alice

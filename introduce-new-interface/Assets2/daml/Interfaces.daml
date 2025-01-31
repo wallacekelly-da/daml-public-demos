@@ -11,7 +11,6 @@ data AssetView = AssetView
     quantity : Int
     version : Text
 
-
 interface IAsset where
   viewtype AssetView
   
