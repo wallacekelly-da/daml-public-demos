@@ -37,7 +37,7 @@ for simplicity in the demo._
 
 To checkout this demo, use:
 
-```
+```sh
 git clone \
   https://github.com/wallacekelly-da/daml-public-demos.git \
   --single-branch \
@@ -48,13 +48,13 @@ git clone \
 
 Change into the project folder.
 
-```
+```sh
 cd introduce-new-interface/introduce-new-interface
 ```
 
 Start the ledger with an `Asset1` contract.
 
-```
+```sh
 cd Assets1
 
 daml start
@@ -62,13 +62,13 @@ daml start
 
 The output includes:
 
-```
+```plaintext
 TV created and given to Bob.
 ```
 
 Store away Alice's party id:
 
-```
+```sh
 export DEMO_ALICE=$(grpcurl --plaintext localhost:6865 \
   com.daml.ledger.api.v1.admin.PartyManagementService.ListKnownParties \
   | jq -r '.party_details[] | select(.party | startswith("alice::")) | .party')
@@ -79,7 +79,7 @@ export DEMO_ALICE=$(grpcurl --plaintext localhost:6865 \
 
 Build the Assets2 project.
 
-```
+```sh
 cd Assets2
 
 daml build
@@ -87,13 +87,13 @@ daml build
 
 Upload the new DAR to the ledger.
 
-```
+```sh
 daml ledger upload-dar .daml/dist/Assets2-0.0.2.dar
 ```
 
 Create an Assets2 contract.
 
-```
+```sh
 daml script \
   --ledger-host localhost \
   --ledger-port 6865 \
@@ -103,13 +103,13 @@ daml script \
 
 The output includes:
 
-```
+```plaintext
 DVDs created and given to Charlie
 ```
 
 Store away the new package id:
 
-```
+```sh
 export DEMO_PACKAGEID=$(daml damlc inspect-dar --json \
   .daml/dist/Assets2-0.0.2.dar \
   | jq -r '.main_package_id')
@@ -123,7 +123,7 @@ queries for all contracts which implement the `IAsset` interface.
 Run the [`listAssets` script](./Assets2/daml/Scripts.daml).
 Notice that it returns _all_ assets. 
 
-```
+```sh
 daml script \
   --ledger-host localhost \
   --ledger-port 6865 \
@@ -134,14 +134,14 @@ daml script \
 The output includes information about both an `Asset1` contract and an `Asset2` contract.
 A default quantity of `1` has been returned for the `Asset1` contract.
 
-```
+```plaintext
 Asset1: Bob's 1 TV
 Asset2: Charlie's 5 discs
 ```
 
 Store away the current ledger offset:
 
-```
+```sh
 export DEMO_OFFSET=$(grpcurl --plaintext localhost:6865 \
   com.daml.ledger.api.v1.TransactionService.GetLedgerEnd \
   | jq -r '.offset.absolute')
@@ -149,7 +149,7 @@ export DEMO_OFFSET=$(grpcurl --plaintext localhost:6865 \
 
 Query for any contracts which implement `IAsset`.
 
-```
+```sh
 cat GetActiveContracts.json \
   | envsubst \
   | grpcurl --plaintext -d @ \
@@ -183,7 +183,7 @@ declares a `TakeBack` choice.
 Run the [`takeBackAssets` script](./Assets2/daml/Scripts.daml).
 Notice that the choice is exercised on both `Asset1` and `Asset2` contracts.
 
-```
+```sh
 daml script \
   --ledger-host localhost \
   --ledger-port 6865 \
@@ -194,7 +194,7 @@ daml script \
 Re-run the [`listAssets` script](./Assets2/daml/Scripts.daml).
 Notice that the resulting contracts are _all_ `Asset2` contracts.
 
-```
+```sh
 daml script \
   --ledger-host localhost \
   --ledger-port 6865 \
@@ -202,9 +202,16 @@ daml script \
   --script-name Scripts:listAssets
 ```
 
+The result is:
+
+```plaintext
+Asset2: Alice's 1 TV
+Asset2: Alice's 5 discs
+```
+
 Confirm the same results with `grpcurl`:
 
-```
+```sh
 export DEMO_OFFSET=$(grpcurl --plaintext localhost:6865 \
   com.daml.ledger.api.v1.TransactionService.GetLedgerEnd \
   | jq -r '.offset.absolute')
@@ -216,4 +223,21 @@ cat GetActiveContracts.json \
       localhost:6865 \
       com.daml.ledger.api.v1.ActiveContractsService.GetActiveContracts \
   | jq -f GetActiveContracts.jq
+```
+
+The result is:
+
+```json
+{
+  "owner": "alice::12203...",
+  "id": "TV",
+  "quantity": "1",
+  "version": "2"
+}
+{
+  "owner": "alice::12203...",
+  "id": "discs",
+  "quantity": "5",
+  "version": "2"
+}
 ```
