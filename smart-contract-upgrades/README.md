@@ -34,7 +34,7 @@ cd ../..
 Set the SDK version.
 
 ```
-export DAML_SDK_VERSION=2.10.0-rc1
+export DAML_SDK_VERSION=2.10.0
 ```
 
 Build the Daml.
