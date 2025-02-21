@@ -1,0 +1,18 @@
+{
+  "filter": {
+    "filters_by_party": {
+      "<insert party id>": {
+        "inclusive": {
+          "template_ids": [
+            {
+              "package_id": "#AssetModels",
+              "module_name": "Assets",
+              "entity_name": "Asset"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "verbose": true
+}
