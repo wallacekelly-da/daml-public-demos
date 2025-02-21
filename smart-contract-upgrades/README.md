@@ -238,7 +238,7 @@ daml script \
 **Notice** the following:
 
 * The new choice was called on the old contracts.
-* The old contracts were not upgraded to call the _nonconsuming_ choice.
+* The old contracts were not upgraded to call the _nonconsuming_ choice.  
   (we know this because no create events occurred on the transaction stream)
 
 **Exercise** the _consuming_ `ReturnIt` choice on all the contracts.
