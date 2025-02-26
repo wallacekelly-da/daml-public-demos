@@ -1,0 +1,18 @@
+{
+  "tokenCallbacks": [
+    {
+      "issuerId": "mockauth",
+      "tokenExpiry": 3600,
+      "requestMappings": [
+        {
+          "requestParam": "client_secret",
+          "match": "secret",
+          "claims": {
+            "aud": "https://daml.com/jwt/aud/participant/${participant_id}",
+            "sub": "${client_id}"
+          }
+        }
+      ]
+    }
+  ]
+}
