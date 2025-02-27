@@ -1,0 +1,8 @@
+sdk-version: 2.10.0
+name: propose-accept
+version: 0.0.1
+source: .
+dependencies:
+- daml-prim
+- daml-stdlib
+- daml-script

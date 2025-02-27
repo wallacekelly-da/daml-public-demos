@@ -1,0 +1,89 @@
+module Main where
+
+import Daml.Script
+
+createUsers : Script [(Party, UserId)]
+createUsers = script do
+
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+  charlie <- allocateParty "Charlie"
+
+  aliceUser <- validateUserId "Alice"
+  bobUser <- validateUserId "Bob"
+  charlieUser <- validateUserId "Charlie"
+
+  createUser (User aliceUser (Some alice)) [CanActAs alice]
+  createUser (User bobUser (Some bob)) [CanActAs bob]
+  createUser (User charlieUser (Some charlie)) [CanActAs alice, CanActAs bob]
+  
+  pure [ (alice, aliceUser),
+         (bob, bobUser),
+         (charlie, charlieUser) ]
+
+
+template Agreement
+  with
+    partyA : Party
+    partyB : Party
+    datum : Text
+  where
+    signatory partyA, partyB
+
+
+template ProposeAgreement
+  with
+    partyA : Party
+    partyB : Party
+    datum : Text
+  where
+    signatory partyA
+    observer partyB
+    
+    choice AcceptAgreement : ContractId Agreement
+      controller partyB
+      do create Agreement with ..
+  
+
+singlePartyUserFails : Script (ContractId Agreement)
+singlePartyUserFails = script do
+  [ (alice, aliceUser),
+    (bob, bobUser),
+    (charlie, charlieUser) ] <- createUsers
+
+  submitUser aliceUser do
+    createCmd Agreement with
+      partyA = alice
+      partyB = bob
+      datum = "Alice and Bob agree on something"
+
+
+multiPartyUserSucceeds : Script (ContractId Agreement)
+multiPartyUserSucceeds = script do
+
+  [ (alice, aliceUser),
+    (bob, bobUser),
+    (charlie, charlieUser) ] <- createUsers
+
+  submitUser charlieUser do
+    createCmd Agreement with
+      partyA = alice
+      partyB = bob
+      datum = "Charlie signed for Alice and Bob"
+      
+
+proposeAndAccept : Script (ContractId Agreement)
+proposeAndAccept = script do
+
+  [ (alice, aliceUser),
+    (bob, bobUser),
+    (charlie, charlieUser) ] <- createUsers
+
+  proposal <- submitUser aliceUser do
+    createCmd ProposeAgreement with
+      partyA = alice
+      partyB = bob
+      datum = "Alice and Bob agree on something"
+  
+  submitUser bobUser do
+    exerciseCmd proposal AcceptAgreement
