@@ -1,0 +1,7 @@
+sdk-version: 2.10.0
+name: mockauth
+version: 0.0.1
+source: .
+dependencies:
+  - daml-stdlib
+  - daml-prim

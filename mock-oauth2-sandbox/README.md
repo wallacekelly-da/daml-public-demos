@@ -11,12 +11,12 @@ This is helpful for testing and diagnostics of auth-related issues.
 1. **Clone** this code.
 
    ```
-    git clone \
-      https://github.com/wallacekelly-da/daml-public-demos.git \
-      --single-branch \
-      --depth 1 \
-      --branch mock-oauth2-sandbox \
-      mock-oauth2-sandbox
+   git clone \
+     https://github.com/wallacekelly-da/daml-public-demos.git \
+       --single-branch \
+       --depth 1 \
+       --branch mock-oauth2-sandbox \
+       mock-oauth2-sandbox
    ```
 
 1. **Start** the mock-oauth2-server:
@@ -39,10 +39,9 @@ This is helpful for testing and diagnostics of auth-related issues.
 1. **Start** Sandbox:
 
     ```
-    DAML_SDK_VERSION=3.3.0-snapshot.20250212.0 \
-      daml sandbox \
-        --log-level-canton DEBUG \
-        --config sandbox.conf
+    daml sandbox \
+      --log-level-canton DEBUG \
+      --config sandbox.conf
     ```
 
     Confirm its health:
@@ -53,28 +52,29 @@ This is helpful for testing and diagnostics of auth-related issues.
 
 1. **Get** the participant id from the Admin API:
 
-    <!-- ```
+    <!-- Canton 2.x -->
+    ```
     export PARTICIPANT_ID=$( \
       grpcurl -plaintext localhost:6866 \
-      com.digitalasset.canton.health.admin.v30.StatusService.Status \
+      com.digitalasset.canton.health.admin.v0.StatusService.Status \
         | jq -r '.success.id' )
     echo $PARTICIPANT_ID
-    ``` -->
-
     ```
+
+    <!-- Canton 3.x -->
+    <!-- ```
     export PARTICIPANT_ID=$( \
       grpcurl -plaintext localhost:6866 \
         com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus \
           | jq -r '.status.commonStatus.uid' )
     echo $PARTICIPANT_ID
-    ```
+    ``` -->
 
 1. **Show** that a token is required to list the packages:
 
     ```
-    DAML_SDK_VERSION=3.3.0-snapshot.20250212.0 \
-      daml canton-console \
-        -C canton.features.enable-testing-commands=yes
+    daml canton-console \
+      -C canton.features.enable-testing-commands=yes
     ```
 
     The following will fail with `UNAUTHENTICATED`.
@@ -105,10 +105,9 @@ This is helpful for testing and diagnostics of auth-related issues.
 1. **List** the packages successfully _with a token_:
 
     ```
-    DAML_SDK_VERSION=3.3.0-snapshot.20250212.0 \
-      daml canton-console \
-        -C canton.features.enable-testing-commands=yes \
-        -C canton.remote-participants.sandbox.token=$ADMIN_TOKEN
+    daml canton-console \
+      -C canton.features.enable-testing-commands=yes \
+      -C canton.remote-participants.sandbox.token=$ADMIN_TOKEN
     ```
 
     The following now succeeds:
