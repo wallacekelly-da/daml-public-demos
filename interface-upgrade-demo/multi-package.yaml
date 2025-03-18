@@ -1,0 +1,4 @@
+packages:
+  - ./AssetInterface
+  - ./Assets1/AssetModels
+  - ./Assets2/AssetModels

@@ -1,0 +1,66 @@
+module AssetInterface where
+
+import Daml.Script
+import Helpers
+import DA.Foldable (forA_)
+import DA.Action (void)
+
+data IAssetView = IAssetView
+  with
+    issuer : Party
+    owner  : Party
+    name   : Text
+
+interface IAsset where
+  viewtype IAssetView
+
+  giveTo : Party -> Update (ContractId IAsset)
+  returnIt: Update (ContractId IAsset)
+  getAssetSummary: Update Text
+
+  choice Give : ContractId IAsset
+    with
+      newOwner : Party
+    controller (view this).owner
+    do
+      giveTo this newOwner
+
+  choice ReturnIt : ContractId IAsset
+    controller (view this).owner
+    do
+      if (view this).owner /= (view this).issuer
+      then returnIt this
+      else pure self
+
+  nonconsuming choice GetSummary : Text
+      controller (view this).issuer
+      do
+        getAssetSummary this
+
+showSummaries : Party -> Script ()
+showSummaries party = script do
+  assets <- queryInterface @IAsset party
+  forA_ assets (\(cid, a) -> do
+      summary <- submit party $ exerciseCmd cid GetSummary
+      debugRaw $ "Asset: " <> summary
+    )
+
+showSummariesForAlice : Script ()
+showSummariesForAlice = script do
+  (alice, _aliceId) <- findOrAllocateUser "alice"
+
+  debugRaw $ "Assets visible to Alice:"
+  showSummaries alice
+
+returnAll : Script ()
+returnAll = script do
+  (alice, _aliceId) <- findOrAllocateUser "alice"
+  assets <- queryInterface @IAsset alice
+  forA_ assets (\(cid, a) ->
+      case a of
+        Some assetView -> void $ submit assetView.owner $ exerciseCmd cid ReturnIt
+        None -> pure () -- failed interface view calculation
+    )
+
+  debugRaw $ "Assets returned."
+  showSummaries alice
