@@ -1,0 +1,49 @@
+module Assets where
+
+import Daml.Script
+import Helpers
+
+import AssetInterface
+
+template Asset
+  with
+    issuer : Party
+    owner  : Party
+    name   : Text
+    desc   : Text
+  where
+    ensure name /= ""
+    signatory issuer
+    observer owner
+    
+    interface instance IAsset for Asset where
+      view = IAssetView issuer owner name
+
+      giveTo newOwner = do
+        newAssetC <- create this with owner = newOwner
+        return (toInterfaceContractId newAssetC)
+
+      returnIt = do
+        newAssetC <- create this with owner = issuer
+        return (toInterfaceContractId newAssetC)
+
+      getAssetSummary = do
+        pure $ name
+          <> ", " <> show desc
+          <> ", " <> show owner
+
+
+setup : Script ()
+setup = script do
+  (alice, _aliceId) <- findOrAllocateUser "alice"
+  (charlie, _charlieId) <- findOrAllocateUser "charlie"
+
+  aliceConsole <- submit alice do
+    createCmd Asset with
+      issuer = alice
+      owner = charlie
+      name = "game console"
+      desc = "xBox One"
+  
+  debugRaw $ "Asset created."
+  showSummaries alice  

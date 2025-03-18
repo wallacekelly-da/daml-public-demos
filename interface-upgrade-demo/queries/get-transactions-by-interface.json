@@ -1,0 +1,24 @@
+{
+  "begin": {
+    "boundary": "LEDGER_BEGIN"
+  },
+  "filter": {
+    "filters_by_party": {
+      "<insert party id>": {
+        "inclusive": {
+          "interface_filters": [
+            {
+              "interface_id": {
+                "package_id": "<insert package id>",
+                "module_name": "AssetInterface",
+                "entity_name": "IAsset"
+              },
+              "include_interface_view": true
+            }
+          ]
+        }
+      }
+    }
+  },
+  "verbose": true
+}
