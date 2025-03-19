@@ -6,7 +6,7 @@ Each demo is in its own Git branch.
 
 It would be nice to have Intellisense in Visual Code when writing a [Canton Console script](https://docs.daml.com/2.6.5/canton/usermanual/console.html).
 
-![](intellisense.png)
+![](canton/console-intellisense/intellisense.png)
 
 Canton Console scripts are used for bootstrapping
 and other administrative tasks on Canton nodes.
