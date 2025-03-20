@@ -23,3 +23,5 @@ create-daml-app/
 **/node_modules/
 shell.log
 ui-backend-*.conf
+*~
+*#

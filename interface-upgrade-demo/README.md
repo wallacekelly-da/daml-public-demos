@@ -1,24 +1,11 @@
 # Smart Contract Upgrades
 
-## Download
-
-To checkout this demo, use:
-
-```
-git clone \
-  https://github.com/wallacekelly-da/daml-public-demos.git \
-  --single-branch \
-  --depth 1 \
-  --branch smart-contract-upgrades \
-  smart-contract-upgrades
-```
-
 ## Setup
 
 CD into the folder.
 
 ```
-cd smart-contract-upgrades/smart-contract-upgrades
+cd interface-upgrade-demo
 ```
 
 Install the SDK.
@@ -34,7 +21,7 @@ cd ../..
 Set the SDK version.
 
 ```
-export DAML_SDK_VERSION=2.10.0-rc1
+export DAML_SDK_VERSION=2.9.5
 ```
 
 Build the Daml.
@@ -80,9 +67,9 @@ daml ledger list-parties \
   --port 4001
 ```
 
-Replace the party id in [get-transactions.json](./queries/get-transactions.json).
+Replace the party id in [get-transactions.json](./queries/get-transactions.json) and [get-transactions-by-interface.json](./queries/get-transactions-by.json).
 
-Get the package id.
+Get the package id for the V1 package.
 
 ```
 daml damlc inspect-dar --json \
@@ -103,7 +90,8 @@ cat queries/get-transactions.json | \
     com.daml.ledger.api.v1.TransactionService.GetTransactions
 ```
 
-Create a contract.
+Create a v1 contract and notice that it appears on the transaction
+stream.
 
 ```
 daml script \
@@ -113,9 +101,30 @@ daml script \
   --script-name Assets:setup
 ```
 
-In [get-transactions.json](./queries/get-transactions.json), replace the package-id with `#AssetModels`.
+Get the package id for the Asset Interface package package.
 
-Create a second contract.
+```
+daml damlc inspect-dar --json \
+  AssetInterface/.daml/dist/AssetInterface-0.0.1.dar \
+  | grep main_package_id
+```
+
+
+In [get-transactions-by-interface.json](./queries/get-transactions-by-interface.json), replace the package-id with package ID of the asset interface package.
+
+Start another transacion stream using the interface query and notice
+that the V1 contract appears here also, with the fields visible as in
+the viewtype `IAssetView`.
+
+
+```
+cat queries/get-transactions-by-interface.json | \
+  grpcurl \
+    -plaintext \
+    -d @ \
+    localhost:4001 \
+    com.daml.ledger.api.v1.TransactionService.GetTransactions
+```
 
 ## Step 2 - Deploy a new version
 
@@ -140,9 +149,10 @@ daml script \
 
 Notice the following:
 
-* When the Daml Script queried for assets, it retrieved and displayed all the assets.
-* The new field is defaulted with `None`.
-* The new contract was streamed to GetTransactions.
+* When the Daml Script queried for assets, it retrieved and displayed all the assets, both v1 and v2.
+* The v2 contract was not emitted on the v1 transaction stream, but it
+  was emitted on the interface transaction stream with the same
+  `IAssetView` representation.
 
 ## Step 3 - Exercise new choices
 
@@ -152,14 +162,14 @@ Exercise the new, _non-consuming_ `GetSummary` choice.
 daml script \
   --ledger-host localhost \
   --ledger-port 4001 \
-  --dar Assets2/AssetModels/.daml/dist/AssetModels-0.0.2.dar \
-  --script-name Assets:getSummaries
+  --dar AssetInterface/.daml/dist/AssetInterface-0.0.1.dar \
+  --script-name AssetInterface:showSummariesForAlice
 ```
 
 Notice the following:
 
-* The new choice was called on the old contracts.
-* No create events occurred on the transaction stream.  
+* The new choice was called on both v1 and v2 contracts.
+* No events occurred on either transaction stream.
   (the old contracts were not converted to new contracts)
 
 Exercise the _consuming_ `ReturnIt` choice on all the contracts.
@@ -168,13 +178,23 @@ Exercise the _consuming_ `ReturnIt` choice on all the contracts.
 daml script \
   --ledger-host localhost \
   --ledger-port 4001 \
-  --dar Assets2/AssetModels/.daml/dist/AssetModels-0.0.2.dar \
-  --script-name Assets:returnAll
+  --dar AssetInterface/.daml/dist/AssetInterface-0.0.1.dar \
+  --script-name AssetInterface:returnAll
 ```
 
 Notice the following:
 
-* The new choice was exercised on all contracts, including v1 contracts.  
-  (all assets have been returned to `alice`.)
-* The old contracts were archived. Version 2 contracts were created.  
-  (as can be seen on the contract stream.)
+* The new choice was exercised on all contracts, including both v1 and
+  v2 contracts.  (all assets have been returned to `alice`.)
+* The old contracts were archived and replacement contracts have been
+  created for the corresponding version.
+
+---
+
+```
+daml ledger upload-dar \
+  --host localhost \
+  --port 4001 \
+   AssetInterface/.daml/dist/AssetInterface-0.0.1.dar
+```
+

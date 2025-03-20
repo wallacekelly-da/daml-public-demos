@@ -2,14 +2,14 @@ services:
 
   domain1:
     container_name: domain1
-    image: digitalasset-docker.jfrog.io/canton-enterprise:2.10.0-rc1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.9.5
     volumes:
       - ./configs:/canton/host/configs:r
     command: daemon --config "/canton/host/configs/domain1.conf" --log-profile container --log-level-root INFO
 
   participant1:
     container_name: participant1
-    image: digitalasset-docker.jfrog.io/canton-enterprise:2.10.0-rc1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.9.5
     volumes:
       - ./configs:/canton/host/configs:r
       - ./Assets1/AssetModels/.daml/dist:/canton/host/dist:r
