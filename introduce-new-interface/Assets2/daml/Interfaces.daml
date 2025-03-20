@@ -1,0 +1,65 @@
+module Interfaces where
+
+import Assets1
+import Assets2
+
+data AssetView = AssetView
+  with
+    issuer : Party
+    owner : Party
+    id : Text
+    quantity : Int
+    version : Text
+
+
+interface IAsset where
+  viewtype AssetView
+  
+  giveTo : Party -> Update (ContractId IAsset)
+  takeBack : (ContractId IAsset) -> Update (ContractId IAsset)
+  
+  choice GiveTo : ContractId IAsset
+    with newOwner : Party
+    controller (view this).owner
+    do
+      giveTo this newOwner
+  
+  choice TakeBack : ContractId IAsset
+    controller (view this).issuer
+    do takeBack this self
+  
+  interface instance IAsset for Asset1 where
+
+    view = AssetView issuer owner name 1 "1"
+    
+    giveTo newOwner = do
+      newAsset <- create Asset2 with
+        issuer = this.issuer
+        owner = newOwner
+        desc = this.name
+        num = 1
+      return (toInterfaceContractId newAsset)
+    
+    takeBack _cid = do
+      newAsset <- create Asset2 with
+        issuer = this.issuer
+        owner = this.issuer
+        desc = this.name
+        num = 1
+      return (toInterfaceContractId newAsset)
+
+
+  interface instance IAsset for Asset2 where
+
+    view = AssetView issuer owner desc num "2"
+
+    giveTo newOwner = do
+      newAsset <- create this with owner = newOwner
+      return (toInterfaceContractId newAsset)
+    
+    takeBack cid = do
+      if this.owner == this.issuer
+      then pure cid
+      else do
+        newAsset <- create this with owner = this.issuer
+        return (toInterfaceContractId newAsset)

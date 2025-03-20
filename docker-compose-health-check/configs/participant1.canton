@@ -1,0 +1,6 @@
+import com.digitalasset.canton.concurrent.Threading
+
+val thisNode = participants.local.head
+thisNode.domains.connect(thisNode.name, connection="http://mydomain:5001")
+Threading.sleep(5000)
+thisNode.parties.enable(name="alice", displayName=Some("alice"))

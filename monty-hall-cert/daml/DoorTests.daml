@@ -1,0 +1,61 @@
+module DoorTests where
+
+import Daml.Script
+import DA.Optional (isSome, isNone)
+import Doors
+
+
+-- custom data type
+data ClosedDoorSetup = ClosedDoorSetup with
+  gameId : Text
+  host : Party
+  player : Party
+  doorNumber : Int
+  prize : Prize
+  closedDoor : ContractId Door
+  
+
+-- modularized scripts
+setupClosedDoor : Script ClosedDoorSetup
+setupClosedDoor = do
+  let gameId = "547f6dce-925e-4c52-9ea3-c83363fab650"
+      doorNumber = 1
+      prize = Car
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  closedDoor <- submit host $ createCmd Door with player = None, ..
+  pure ClosedDoorSetup with ..
+
+
+-- happy path
+can_only_see_opened_doors : Script ()
+can_only_see_opened_doors = do
+
+  -- arrange
+  ClosedDoorSetup{..} <- setupClosedDoor
+
+  -- assert
+  doorById <- queryContractId player closedDoor
+  doorByKey <- queryContractKey @Door player (host, gameId, doorNumber)
+  assertMsg "Player should not be able to see behind the closed door."
+    (isNone doorById && isNone doorByKey)
+
+  -- act
+  openedDoor <- submit host $ exerciseCmd closedDoor Open with player
+
+  -- assert
+  doorById <- queryContractId player openedDoor
+  doorByKey <- queryContractKey @Door player (host, gameId, doorNumber)
+  assertMsg "Player should be able to see behind an opened door."
+    (isSome doorById && isSome doorByKey)
+
+
+-- unhappy path
+player_cannot_open_door : Script ()
+player_cannot_open_door = do
+
+  -- arrange
+  ClosedDoorSetup{..} <- setupClosedDoor
+  
+  -- act, assert
+  submitMustFail player $ exerciseCmd closedDoor Open with player, ..

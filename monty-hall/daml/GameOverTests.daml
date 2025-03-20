@@ -1,0 +1,66 @@
+{-# LANGUAGE ApplicativeDo #-}
+module GameOverTests where
+
+import Daml.Script
+import DA.Assert
+import DA.Foldable
+import GameOver
+import Door
+import DoorTests
+
+can_create_gameover = script do
+  let gameShowUid = "testing"
+      selectedDoor = 1
+      prize = Car
+      doorCount = 3
+      winningDoor = 1
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  doorCreator <- submit host do createCmd DoorUtilityFunctions with ..
+  doors <- submit host do exerciseCmd doorCreator CreateDoors with ..
+  _ <- submit host do createCmd GameOver with ..
+  Some (gameOverId, gameOver) <-
+    queryContractKey @GameOver player (host, gameShowUid)
+  gameOver.selectedDoor === selectedDoor
+  gameOver.doors === doors 
+  -- clean up
+  submit host do
+    archiveCmd doorCreator
+    archiveCmd gameOverId
+    return ()
+  -- submit host do archiveCmd gameOverId
+  forA_ doors do (\d -> submit host do archiveCmd d)
+
+cannot_create_duplicate_gameover = script do
+  let gameShowUid = "testing"
+      selectedDoor = 1
+      prize = Car
+      doorCount = 3
+      winningDoor = 1
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  doorCreator <- submit host do createCmd DoorUtilityFunctions with ..
+  doors <- submit host do exerciseCmd doorCreator CreateDoors with ..
+  gameOver <- submit host do createCmd GameOver with ..
+  _ <- submitMustFail host do createCmd GameOver with prize = Goat, ..
+  -- clean up
+  submit host do
+    archiveCmd doorCreator
+    archiveCmd gameOver
+    return ()
+  forA_ doors do (\d -> submit host do archiveCmd d)
+
+cannot_set_selecteddoor_nonexistent = script do
+  let gameShowUid = "testing"
+      prize = Car
+      doorCount = 3
+      winningDoor = 1
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  doorCreator <- submit host do createCmd DoorUtilityFunctions with ..
+  doors <- submit host do exerciseCmd doorCreator CreateDoors with ..
+  _ <- submitMustFail host do createCmd GameOver with selectedDoor = 0, ..
+  _ <- submitMustFail host do createCmd GameOver with selectedDoor = 4, ..
+  -- clean up
+  submit host do archiveCmd doorCreator
+  forA_ doors do (\d -> submit host do archiveCmd d)

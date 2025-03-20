@@ -1,0 +1,52 @@
+{
+  "tokenCallbacks": [
+    {
+      "issuerId": "mockissuer",
+      "tokenExpiry": 3600,
+      "requestMappings": [
+        {
+          "requestParam": "mock_token_type",
+          "match": "audience",
+          "claims": {
+            "aud": "https://daml.com/jwt/aud/participant/${participant}",
+            "sub": "${sub}"
+          }
+        },
+        {
+          "requestParam": "mock_token_type",
+          "match": "scope",
+          "claims": {
+            "aud": "${participant}",
+            "sub": "${sub}",
+            "scope": "daml_ledger_api"
+          }
+        },
+        {
+          "requestParam": "mock_token_type",
+          "match": "custom",
+          "claims": {
+            "https://daml.com/ledger-api": {
+              "applicationId": "mockauth-demo",
+              "actAs": [
+                "${actAs}"
+              ],
+              "readAs": [
+                "${readAs}"
+              ]
+            }
+          }
+        },
+        {
+          "requestParam": "mock_token_type",
+          "match": "custom-admin",
+          "claims": {
+            "https://daml.com/ledger-api": {
+              "applicationId": "mockauth-demo",
+              "admin": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

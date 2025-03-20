@@ -1,0 +1,64 @@
+services:
+
+  mydomain:
+    container_name: mydomain
+    image: digitalasset/canton-open-source:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container
+    expose:
+      - 5001
+      - 5002
+    ports:
+      - 5001:5001
+      - 5002:5002
+
+  participant1:
+    container_name: participant1
+    image: digitalasset/canton-open-source:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+      - ./.daml/dist/:/canton/host/dist/:rw
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container
+    depends_on:
+      - mydomain
+    expose:
+      - 5003
+      - 5004
+    ports:
+      - 5003:5003
+      - 5004:5004
+
+  participant2:
+    container_name: participant2
+    image: digitalasset/canton-open-source:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+      - ./.daml/dist/:/canton/host/dist/:rw
+    command: daemon --config "/canton/host/configs/participant2.conf" --bootstrap "/canton/host/configs/participant2.canton" --log-profile container
+    depends_on:
+      - mydomain
+    expose:
+      - 5005
+      - 5006
+    ports:
+      - 5005:5005
+      - 5006:5006
+
+  utils:
+    container_name: utils
+    image: digitalasset/canton-open-source:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+    command: run /canton/host/configs/utils.canton --config "/canton/host/configs/remote.conf" --log-profile container --log-level-root WARN
+    depends_on:
+      - participant1
+      - participant2
+
+  scripts:
+    container_name: scripts
+    image: digitalasset/daml-sdk:2.7.6
+    volumes:
+      - ./configs:/canton/host/configs:rw
+      - ./.daml/dist/:/canton/host/dist/:rw
+    command: daml script --dar /canton/host/dist/demo-0.0.1.dar --script-name Scripts:happy_path --participant-config /canton/host/configs/participant-config.json

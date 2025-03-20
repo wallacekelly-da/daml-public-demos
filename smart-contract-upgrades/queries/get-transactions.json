@@ -1,0 +1,21 @@
+{
+  "begin": {
+    "boundary": "LEDGER_BEGIN"
+  },
+  "filter": {
+    "filters_by_party": {
+      "<insert party id>": {
+        "inclusive": {
+          "template_ids": [
+            {
+              "package_id": "<insert package id>",
+              "module_name": "Assets",
+              "entity_name": "Asset"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "verbose": true
+}

@@ -1,0 +1,80 @@
+module Games where
+
+import Doors
+
+
+template Game with
+    gameId : Text
+    host : Party
+    winningDoor : Int
+  where
+    signatory host
+    key (host, gameId) : (Party, Text)
+    maintainer key._1
+    ensure gameId /= "" || error "gameId must be set"
+    
+    choice Start : ContractId PlayersTurn with
+        player : Party
+      controller host
+      do
+        doors <- mapA (\doorNumber ->
+            create Door with
+              player = None
+              prize = if doorNumber == winningDoor then Car else Goat
+              ..
+          ) [1, 2, 3]
+        create PlayersTurn with ..
+    
+
+template PlayersTurn with
+    gameId : Text
+    host : Party
+    player : Party
+  where
+    signatory host
+    observer player
+
+    choice Choose : ContractId HostsTurn with
+        selectedDoorNumber : Int
+      controller player
+      do create HostsTurn with ..
+    
+
+template HostsTurn with
+    gameId : Text
+    host : Party
+    player : Party
+    selectedDoorNumber : Int
+  where
+    signatory host, player
+  
+    choice OpenDoor : Either (ContractId GameOver) (ContractId PlayersTurn) with
+        doorToOpenNumber : Int
+      controller host    
+      do
+        assertMsg "doorToOpen must be 1, 2, or 3"
+          (doorToOpenNumber >= 1 && doorToOpenNumber <= 3)
+
+        openedDoorId <- exerciseByKey @Door (host, gameId, doorToOpenNumber) Open with player
+        openedDoor <- fetch openedDoorId
+        if openedDoor.prize /= Car
+        then Right <$> create PlayersTurn with ..
+        else do
+          (selectedDoorId, selectedDoor) <- fetchByKey @Door (host, gameId, selectedDoorNumber) 
+          _ <- exercise selectedDoorId Open with ..
+          Left <$> create GameOver with prize = selectedDoor.prize, ..
+
+
+template GameOver with
+    gameId : Text
+    host : Party
+    player : Party
+    prize : Prize
+  where
+    signatory host, player
+
+    nonconsuming choice CreateSummary : Text
+      controller player
+      do
+        if prize == Goat then pure "You won a goat!"
+        else pure "You won a car!"

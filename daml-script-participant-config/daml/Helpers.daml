@@ -1,0 +1,62 @@
+module Helpers (findOrAllocatePartyOn, submitAfterPollingForCid, Retries(..)) where
+
+import Daml.Script
+import DA.Optional (mapOptional)
+import DA.Time (RelTime)
+
+data FindPartyResult 
+  = Found Party
+  | NotFound
+  | MultipleFound
+
+findPartyInDetails : Text -> [PartyDetails] -> FindPartyResult
+findPartyInDetails displayName partyDetails = do
+  let rolePartyOptional partyDetails =
+        if partyDetails.displayName == Some (displayName)
+        then Some partyDetails.party
+        else None
+  case mapOptional rolePartyOptional partyDetails of
+    [p] -> Found p
+    [] -> NotFound 
+    _ -> MultipleFound
+
+findPartyOn : Text -> ParticipantName -> Script FindPartyResult
+findPartyOn displayName participant =
+  findPartyInDetails displayName <$> listKnownPartiesOn participant
+
+findOrAllocatePartyOn : Text -> ParticipantName -> Script Party
+findOrAllocatePartyOn displayName participant = do
+  result <- findPartyOn displayName participant
+  case result of
+    Found party -> pure party
+    MultipleFound -> error $ "Multiple " <> displayName <> " parties found on " <> (participantName participant)
+    NotFound -> do
+      debug $ "Allocating party " <> displayName <> " on " <> (participantName participant)
+      allocatePartyWithHintOn displayName (PartyIdHint displayName) participant
+
+data Retries = Retries with
+  remaining : Int
+  delay : RelTime
+
+-- https://discuss.daml.com/t/contract-not-found-with-daml-script-across-multiple-nodes/7013/2?u=wallacekelly
+pollForCid : (HasAgreement t, Template t)
+  => Party -> ContractId t -> Retries -> Script ()
+pollForCid p cid retries = do
+  r <- queryContractId p cid
+  case r of
+    Some _ -> pure ()
+    None ->
+      if retries.remaining <= 0
+      then do
+        debug "The cid could not be queried."
+        pure ()
+      else do
+        debug $ "Waiting for a cid (" <> show retries.remaining <> " retries)..."
+        sleep retries.delay
+        pollForCid p cid $ retries with remaining = retries.remaining - 1
+
+submitAfterPollingForCid : (HasAgreement t, Template t)
+  => Party -> ContractId t -> Retries -> Commands a -> Script a
+submitAfterPollingForCid p cid retries cmds = do
+  _ <- pollForCid p cid retries
+  submit p cmds

@@ -1,0 +1,22 @@
+module GameOver where
+
+import Door
+
+type GameOverId = ContractId GameOver
+
+template GameOver
+  with
+    host : Party
+    gameShowUid : Text
+    player : Party
+    doors : [DoorId]
+    selectedDoor : Int
+    prize : Prize
+  where
+    signatory host
+    observer player
+    ensure
+      selectedDoor >= 1
+      && selectedDoor <= length doors
+    key (host, gameShowUid) : (Party, Text)
+    maintainer key._1

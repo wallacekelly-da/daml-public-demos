@@ -1,0 +1,92 @@
+services:
+
+  mydomain:
+    container_name: mydomain
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.9.5
+    volumes:
+      - ./configs:/canton/host/configs:r
+    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container
+    expose:
+      - 5001
+      - 5002
+    ports:
+      - 5001:5001
+      - 5002:5002
+
+  participant1:
+    container_name: participant1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.9.5
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/grpc_health_probe",
+          "--addr",
+          "participant1:5861"
+        ]
+    depends_on:
+      - mydomain
+    expose:
+      - 5003
+      - 5004
+    ports:
+      - 5003:5003
+      - 5004:5004
+
+  pqs1_db:
+    container_name: pqs1_db
+    image: postgres:16
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "postgres" ]
+    ports:
+      - 5432:5432
+
+  adminer1:
+    container_name: adminer1
+    image: adminer
+    depends_on:
+      - pqs1_db
+    environment:
+      - ADMINER_DEFAULT_SERVER=pqs1_db
+    ports:
+      - 8080:8080
+
+  pqs1_scribe:
+    container_name: pqs1_scribe
+    image: digitalasset-docker.jfrog.io/participant-query-store:0.5.0
+    volumes:
+      - ./configs:/canton/host/configs:r
+    command: pipeline ledger postgres-document --config /canton/host/configs/pqs1_scribe.conf
+    depends_on:
+      pqs1_db:
+        condition: service_healthy
+      participant1:
+        condition: service_healthy
+      adminer1:
+        condition: service_started
+
+  setup:
+    container_name: setup
+    image: postgres:15
+    volumes:
+      - ./:/host/
+    environment:
+      - PGPASSWORD=postgres
+    command: psql --host=pqs1_db --username=postgres --dbname=postgres --file=/host/setup.sql
+
+  contracts:
+    container_name: scripts
+    image: digitalasset/daml-sdk:2.9.5
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./.daml/dist/:/canton/host/dist/:r
+    command: daml script --dar /canton/host/dist/demo-0.0.1.dar --script-name Scripts:happy_path --ledger-host participant1 --ledger-port 5003
+    depends_on:
+      participant1:
+        condition: service_healthy

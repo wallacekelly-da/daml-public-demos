@@ -1,0 +1,27 @@
+import $file.common
+
+val participant = participants.local.head
+
+participant.domains.connect("mydomain", connection="http://mydomain:4201")
+
+var operator = common.enableOrGetParty(participant, "operator")
+var scheduler = common.enableOrGetParty(participant, "scheduler")
+var contractor = common.enableOrGetParty(participant, "contractor")
+
+if (participant.uid.id == "participant1") {
+  common.createOrGetUser(participant, "wallace", operator, true, "Wallace Kelly")
+  common.createOrGetUser(participant, "alice", scheduler, false, "Alice Jones")
+  common.createOrGetUser(participant, "bob", contractor, false, "Bob Smith")
+
+} else if (participant.uid.id == "participant2") {
+  common.createOrGetUser(participant, "wallace", operator, true, "Wallace Kelly")
+  common.createOrGetUser(participant, "carol", scheduler, false, "Carol Smith")
+  common.createOrGetUser(participant, "david", contractor, false, "David Jones")
+}
+
+common.writeParticipantId(participant);
+for (p <- participant.parties.list()) {
+  if(p.party.uid.namespace == participant.uid.namespace) {
+    common.writePartyId(participant, p.party);
+  }
+}

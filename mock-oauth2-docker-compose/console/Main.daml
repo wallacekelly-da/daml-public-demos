@@ -1,0 +1,27 @@
+module Main where
+
+import Daml.Script
+import DA.Foldable (forA_)
+import DA.Text (isPrefixOf)
+
+template Contract
+  with
+    party: Party
+  where
+    signatory party
+
+getUsers : Script ()
+getUsers = script do
+  debugRaw "Trying to query user management:"
+  users <- listAllUsers
+  forA_ users (\u -> debugRaw $ "   " <> show u.userId)
+
+createContracts : Text -> Script()
+createContracts partyId = script do
+  let Some party = partyFromText partyId
+  debugRaw $ "Trying to create a contract as " <> show party
+  submit party $ createCmd Contract with ..
+  debugRaw $ "Trying to query contracts as " <> show party
+  contracts <- query @Contract party
+  forA_ contracts (\(_, c) ->
+    debugRaw $ "Queried contract of " <> show c.party)

@@ -1,0 +1,9 @@
+import com.digitalasset.canton.logging.NamedLoggerFactory
+import com.typesafe.scalalogging.Logger
+import com.digitalasset.canton.concurrent.Threading
+
+val loggerFactory = consoleEnvironment.environment.loggerFactory
+val logger = Logger(loggerFactory.getLogger(this.getClass))
+
+logger.info(participant1.parties.hosted()(1).party.toProtoPrimitive)
+logger.info(participant2.parties.hosted()(1).party.toProtoPrimitive)

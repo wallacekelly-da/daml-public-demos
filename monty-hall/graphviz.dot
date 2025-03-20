@@ -1,0 +1,79 @@
+digraph G {
+compound=true;
+rankdir=LR;
+subgraph cluster_DoorUtilityFunctions{
+n0[label=Create][color=green]; 
+n1[label=Archive][color=red]; 
+n2[label=CreateDoors][color=green]; 
+label=<<table align = "left" border="0" cellborder="0" cellspacing="1">
+<tr><td align="center"><b>DoorUtilityFunctions</b></td></tr><tr><td align="left">host</td></tr> 
+</table>>;color=blue
+}subgraph cluster_HostsTurn{
+n3[label=Create][color=green]; 
+n4[label=Archive][color=red]; 
+n5[label=Complete][color=red]; 
+label=<<table align = "left" border="0" cellborder="0" cellspacing="1">
+<tr><td align="center"><b>HostsTurn</b></td></tr><tr><td align="left">host</td></tr> 
+<tr><td align="left">gameShowUid</td></tr> 
+<tr><td align="left">player</td></tr> 
+<tr><td align="left">doors</td></tr> 
+<tr><td align="left">selectDoor</td></tr> 
+<tr><td align="left">count</td></tr> 
+</table>>;color=blue
+}subgraph cluster_GameShow{
+n6[label=Create][color=green]; 
+n7[label=StartGame][color=green]; 
+n8[label=Archive][color=red]; 
+n9[label=TakeHostsTurn][color=green]; 
+label=<<table align = "left" border="0" cellborder="0" cellspacing="1">
+<tr><td align="center"><b>GameShow</b></td></tr><tr><td align="left">host</td></tr> 
+<tr><td align="left">gameShowUid</td></tr> 
+<tr><td align="left">player</td></tr> 
+<tr><td align="left">winningDoor</td></tr> 
+<tr><td align="left">doorCount</td></tr> 
+</table>>;color=blue
+}subgraph cluster_PlayersTurn{
+n10[label=Create][color=green]; 
+n11[label=Archive][color=red]; 
+n12[label=SelectDoor][color=red]; 
+label=<<table align = "left" border="0" cellborder="0" cellspacing="1">
+<tr><td align="center"><b>PlayersTurn</b></td></tr><tr><td align="left">host</td></tr> 
+<tr><td align="left">gameShowUid</td></tr> 
+<tr><td align="left">count</td></tr> 
+<tr><td align="left">player</td></tr> 
+<tr><td align="left">doors</td></tr> 
+<tr><td align="left">selectedDoor</td></tr> 
+</table>>;color=blue
+}subgraph cluster_Door{
+n13[label=Create][color=green]; 
+n14[label=Open][color=red]; 
+n15[label=Archive][color=red]; 
+label=<<table align = "left" border="0" cellborder="0" cellspacing="1">
+<tr><td align="center"><b>Door</b></td></tr><tr><td align="left">host</td></tr> 
+<tr><td align="left">gameShowUid</td></tr> 
+<tr><td align="left">number</td></tr> 
+<tr><td align="left">visibleTo</td></tr> 
+<tr><td align="left">prize</td></tr> 
+</table>>;color=blue
+}subgraph cluster_GameOver{
+n16[label=Create][color=green]; 
+n17[label=Archive][color=red]; 
+label=<<table align = "left" border="0" cellborder="0" cellspacing="1">
+<tr><td align="center"><b>GameOver</b></td></tr><tr><td align="left">host</td></tr> 
+<tr><td align="left">gameShowUid</td></tr> 
+<tr><td align="left">player</td></tr> 
+<tr><td align="left">doors</td></tr> 
+<tr><td align="left">selectedDoor</td></tr> 
+<tr><td align="left">prize</td></tr> 
+</table>>;color=blue
+}n2->n13
+n7->n13
+n7->n10
+n9->n16
+n9->n10
+n9->n14
+n9->n5
+n12->n3
+n14->n13
+
+}

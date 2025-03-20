@@ -1,0 +1,78 @@
+module Main where
+
+import Daml.Script
+import DA.Assert ((===))
+
+template Asset
+  with
+    issuer : Party
+    owner  : Party
+    name   : Text
+  where
+    ensure name /= ""
+    signatory issuer
+    observer owner
+    key (issuer, name) : (Party, Text)
+    maintainer key._1
+
+template AssetLookup
+  with looker : Party
+  where
+    signatory looker
+    choice Lookup : Optional (ContractId Asset)
+      with assetKey : (Party, Text) 
+      controller looker
+      do
+        lookupByKey @Asset assetKey
+
+template AssetLookup2
+  with
+    issuer : Party
+    looker : Party
+  where
+    signatory issuer
+    observer looker
+    nonconsuming choice Lookup2 : Optional (ContractId Asset)
+      with name : Text
+      controller looker
+      do
+        lookupByKey @Asset (issuer, name)
+
+template AssetFetch
+  with fetcher : Party
+  where
+    signatory fetcher
+    choice Fetch : (ContractId Asset, Asset)
+      with assetKey : (Party, Text)
+      controller fetcher
+      do
+        fetchByKey @Asset assetKey
+  
+
+setup : Script ()
+setup = script do
+  issuer <- allocateParty "issuer"
+  owner <- allocateParty "owner"
+
+  tv <- submit issuer do
+    createCmd Asset with name = "TV", ..
+
+  submitMustFail owner do
+    createAndExerciseCmd
+      (AssetLookup with looker = owner)
+      (Lookup with assetKey = (issuer, "TV"))
+  
+  lookup <- submit issuer do
+    createCmd AssetLookup2 with looker = owner, ..
+  
+  Some tv2 <- submit owner do
+    exerciseCmd lookup Lookup2 with name = "TV"
+  
+  tv === tv2
+
+  (tv3, _) <- submit owner do
+    createAndExerciseCmd
+      (AssetFetch with fetcher = owner)
+      (Fetch with assetKey = (issuer, "TV"))
+
+  tv === tv3

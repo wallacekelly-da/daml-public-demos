@@ -1,0 +1,174 @@
+{-# LANGUAGE ApplicativeDo #-}
+module GameShowTests where
+
+import Daml.Script
+import DA.Assert
+import DA.Foldable (forA_)
+import Door
+import PlayersTurn
+import GameShow
+
+can_create_gameshow = script do
+  let gameShowUid = "testing"
+      winningDoor = 1
+      doorCount = 3
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  _ <- submit host do createCmd GameShow with ..
+  Some (gameShowId, gameShow) <-
+    queryContractKey @GameShow host (host, gameShowUid)
+  gameShow.winningDoor === winningDoor
+  gameShow.doorCount === doorCount
+  submit host do archiveCmd gameShowId
+
+cannot_create_duplicate_game = script do
+  let gameShowUid = "testing"
+      winningDoor = 1
+      doorCount = 3
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  gameShow <- submit host do createCmd GameShow with ..
+  submitMustFail host do createCmd GameShow with winningDoor = 2, ..
+  submit host do archiveCmd gameShow
+
+cannot_create_game_with_nonexistent_winningdoor = script do
+  let gameShowUid = "testing"
+      doorCount = 3
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  submitMustFail host do createCmd GameShow with winningDoor = 0,..
+  submitMustFail host do createCmd GameShow with winningDoor = 4,..
+  
+cannot_create_game_with_too_few_doors = script do
+  let gameShowUid = "testing"
+      winningDoor = 1
+      doorCount = 1
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  submitMustFail host do createCmd GameShow with ..
+
+started_games_have_the_correct_winning_door = script do
+  let gameShowUid = "testing"
+      winningDoor = 1
+      doorCount = 3
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  gameShow <- submit host do createCmd GameShow with ..
+  playersTurnId <- submit host do exerciseCmd gameShow StartGame
+  Some playersTurn <- queryContractId player playersTurnId
+  length playersTurn.doors === doorCount
+  forA_ playersTurn.doors do
+    (\d -> do
+        Some door <- queryContractId host d
+        if door.number == winningDoor
+        then door.prize === Car
+        else door.prize === Goat)
+  forA_ playersTurn.doors do (\d -> submit host do archiveCmd d) 
+  submit host do
+    archiveCmd playersTurnId
+    archiveCmd gameShow
+    return ()
+
+player_cannot_view_gameshow = script do
+  let gameShowUid = "testing"
+      winningDoor = 1
+      doorCount = 3
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  gameShow <- submit host do createCmd GameShow with ..
+  -- todo: also test for divulgence
+  gameShowView <- queryContractKey @GameShow player (host, gameShowUid)
+  gameShowView === None
+  submit host do archiveCmd gameShow
+
+player_cannot_view_doors = script do
+  let gameShowUid = "testing"
+      winningDoor = 1
+      doorCount = 3
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  gameShow <- submit host do createCmd GameShow with ..
+  playersTurnId <- submit host do exerciseCmd gameShow StartGame
+  Some playersTurn <- queryContractId player playersTurnId
+  forA_ playersTurn.doors do
+    (\d -> do
+        -- todo: also test for divulgence
+        door <- queryContractId @Door player d
+        door === None)
+  forA_ playersTurn.doors do (\d -> submit host do archiveCmd d) 
+  submit host do
+    archiveCmd playersTurnId
+    archiveCmd gameShow
+    return ()
+
+game_ends_if_the_players_door_is_opened = script do
+  let gameShowUid = "testing"
+      winningDoor = 1
+      doorCount = 3
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+
+  gameShow <- submit host do createCmd GameShow with ..
+  playersTurn1 <- submit host do exerciseCmd gameShow StartGame
+  hostsTurn1 <- submit player do exerciseCmd playersTurn1 SelectDoor with newSelectedDoor = winningDoor
+  Right gameOver <- submit host do exerciseCmd gameShow TakeHostsTurn with respondTo = hostsTurn1, openDoorNumber = winningDoor
+
+  doors <- query @Door host
+  forA_ doors do (\d -> submit host do archiveCmd (fst d)) 
+  submit host do
+    archiveCmd gameShow
+    archiveCmd gameOver
+    return ()
+
+game_ends_if_the_player_can_no_longer_switch = script do
+  let gameShowUid = "testing"
+      winningDoor = 1
+      doorCount = 3
+      selectedDoor1 = 2
+      selectedDoor2 = 1
+      openDoorNumber1 = 3
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+
+  gameShow <- submit host do createCmd GameShow with ..
+  playersTurn1 <- submit host do exerciseCmd gameShow StartGame
+  hostsTurn1 <- submit player do exerciseCmd playersTurn1 SelectDoor with newSelectedDoor = selectedDoor1
+  Left playersTurn2 <- submit host do exerciseCmd gameShow TakeHostsTurn with respondTo = hostsTurn1, openDoorNumber = openDoorNumber1,..
+  hostsTurn2 <- submit player do exerciseCmd playersTurn2 SelectDoor with newSelectedDoor = selectedDoor2
+  Right gameOver <- submit host do exerciseCmd gameShow TakeHostsTurn with respondTo = hostsTurn2, openDoorNumber = selectedDoor1
+
+  doors <- query @Door host
+  forA_ doors do (\d -> submit host do archiveCmd (fst d)) 
+  submit host do
+    archiveCmd gameShow
+    archiveCmd gameOver
+    return ()
+
+-- todo: model open and closed doors differently
+--       to support this requirement
+--
+-- player_cannot_select_an_open_door = script do
+--   let gameShowUid = "testing"
+--       winningDoor = 1
+--       doorCount = 3
+--       selectedDoor = 2
+--       openDoorNumber = 3
+--   host <- allocateParty "host"
+--   player <- allocateParty "player"
+
+--   gameShow <- submit host do createCmd GameShow with ..
+--   playersTurn1 <- submit host do exerciseCmd gameShow StartGame
+--   hostsTurn1 <- submit player do exerciseCmd playersTurn1 SelectDoor with newSelectedDoor = selectedDoor
+--   Left playersTurn2 <- submit host do exerciseCmd gameShow TakeHostsTurn with respondTo = hostsTurn1, ..
+--   submitMustFail player do exerciseCmd playersTurn2 SelectDoor with newSelectedDoor = openDoorNumber
+--   -- Right gameOver <- submit host do exerciseCmd gameShow TakeHostsTurn with respondTo = hostsTurn2, openDoorNumber = selectedDoor1
+
+--   doors <- query @Door host
+--   forA_ doors do (\d -> submit host do archiveCmd (fst d)) 
+--   submit host do archiveCmd gameShow
+--   -- submit host do archiveCmd gameOver
+
+-- todo
+-- player cannot select an open door
+-- player can view game after game over
+-- player can view doors after game over
