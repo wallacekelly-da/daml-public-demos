@@ -1,0 +1,12 @@
+sdk-version: 2.4.0
+name: monty-hall
+source: daml
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+
+# to support interfaces
+# https://docs.daml.com/daml/reference/interfaces.html
+build-options: [--target=1.15]

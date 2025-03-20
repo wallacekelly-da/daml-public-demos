@@ -1,0 +1,48 @@
+module Scripts where
+
+import Daml.Script
+import Main
+import Helpers
+import DA.Time (milliseconds)
+
+happy_path_single_participant : Script ()
+happy_path_single_participant = script do
+
+  alice <- allocateParty "alice"
+  bob <- allocateParty "bob"
+
+  debug "Alice creating a bid request..."
+  cidBidRequest <- submit alice do
+    createCmd BidRequest with owner = alice, painter = bob
+
+  debug "Bob submitting a proposal..."
+  cidBid <- submit bob do
+    exerciseCmd cidBidRequest Propose with amount = 1000.0
+ 
+  debug "Alice accepting the proposal..."
+  cidPaintHouse <- submit alice do
+    exerciseCmd cidBid Accept
+  
+  pure ()
+
+happy_path : Script ()
+happy_path = script do
+
+  let retries : Retries = Retries with remaining=10, delay=milliseconds 100
+
+  alice <- findOrAllocatePartyOn "alice" (ParticipantName "participant1")
+  bob <- findOrAllocatePartyOn "bob" (ParticipantName "participant2")
+
+  debug "Alice creating a bid request..."
+  cidBidRequest <- submit alice do
+    createCmd BidRequest with owner = alice, painter = bob
+
+  debug "Bob submitting a proposal..."
+  cidBid <- submitAfterPollingForCid bob cidBidRequest retries do
+    exerciseCmd cidBidRequest Propose with amount = 1000.0
+ 
+  debug "Alice accepting the proposal..."
+  cidPaintHouse <- submitAfterPollingForCid alice cidBid retries
+    do exerciseCmd cidBid Accept
+  
+  pure ()

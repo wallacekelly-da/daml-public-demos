@@ -1,0 +1,76 @@
+module LoansV3 where
+
+import qualified LoansV2 as V2
+
+data DayBasis
+  = Actual_360
+  | Actual_365 
+    deriving (Show, Eq)
+
+template Loan with
+    lender : Party
+    borrower : Party
+    amount : Decimal
+    rate : Decimal
+    dayBasis : DayBasis
+    created : Time
+  where
+    signatory lender
+    observer borrower
+  
+data LoanView = LoanView with
+  lender : Party
+  borrower : Party
+  amount : Decimal
+  rate : Decimal
+  dayBasis : DayBasis
+  created : Time
+    deriving (Show, Eq)
+
+interface ILoan where
+  viewtype LoanView
+  amend : Decimal -> Decimal -> Update (ContractId ILoan)
+  upgrade: ILoan
+
+  choice Amend : ContractId ILoan
+    with
+      newAmount : Decimal
+      newRate : Decimal
+    controller (view this).lender
+    do amend this newAmount newRate 
+
+  choice Upgrade : ContractId ILoan 
+    controller (view this).lender
+    do create $ upgrade this
+
+  interface instance ILoan for Loan where
+
+    view = let Loan{..} = this in LoanView with ..
+
+    amend newAmount newRate = do
+      loanV3 <- create this with
+        amount = newAmount
+        rate = newRate
+      return (toInterfaceContractId loanV3)
+
+    upgrade = toInterface @ILoan this
+
+  interface instance ILoan for V2.Loan where
+
+    view = let V2.Loan{..} = this in LoanView with
+             dayBasis = Actual_360
+             ..
+
+    amend newAmount newRate = do
+      loanV3 <- create Loan with
+        amount = newAmount
+        rate = newRate
+        dayBasis = Actual_360
+        ..
+      return (toInterfaceContractId loanV3)
+    
+    upgrade =
+      toInterface @ILoan (
+        let V2.Loan{..} = this in
+        Loan with dayBasis = Actual_360, ..
+      )

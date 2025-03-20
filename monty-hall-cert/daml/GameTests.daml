@@ -1,0 +1,87 @@
+module GameTests where
+
+import Daml.Script
+import DA.Assert
+import Doors
+import Games
+
+
+-- custom data type
+data GameSetup = GameSetup with
+  gameId : Text
+  host : Party
+  player : Party
+  winningDoor : Int 
+  game : ContractId Game
+
+
+-- test script modularized
+setupGame : Int -> Script GameSetup
+setupGame winningDoor = do
+  let gameId = "988aba15-af29-4e95-a62b-0a53e083de36"
+  host <- allocateParty "host"
+  player <- allocateParty "player"
+  game <- submit host $ createCmd Game with ..
+  pure GameSetup with ..
+
+
+-- happy path
+player_wins : Script ()
+player_wins = do
+
+  -- arrange
+  GameSetup{..} <- setupGame 1
+
+  -- act
+  playersTurn <- submit host $ exerciseCmd game Start with .. 
+  hostsTurn <- submit player $ exerciseCmd playersTurn Choose with selectedDoorNumber = 2
+  Right playersTurn <- submit host $ exerciseCmd hostsTurn OpenDoor with doorToOpenNumber = 3 
+  hostsTurn <- submit player $ exerciseCmd playersTurn Choose with selectedDoorNumber = 1
+  Left gameOverId <- submit host $ exerciseCmd hostsTurn OpenDoor with doorToOpenNumber = 1
+  Some gameOver <- queryContractId host gameOverId
+  
+  -- assert
+  gameOver.prize === Car
+
+
+-- happy path
+host_wins : Script ()
+host_wins = do
+
+  -- arrange
+  GameSetup{..} <- setupGame 2
+  
+  -- act
+  playersTurn <- submit host $ exerciseCmd game Start with .. 
+  hostsTurn <- submit player $ exerciseCmd playersTurn Choose with selectedDoorNumber = 2
+  Right playersTurn <- submit host $ exerciseCmd hostsTurn OpenDoor with doorToOpenNumber = 3 
+  hostsTurn <- submit player $ exerciseCmd playersTurn Choose with selectedDoorNumber = 1
+  Left gameOverId <- submit host $ exerciseCmd hostsTurn OpenDoor with doorToOpenNumber = 2
+  Some gameOver <- queryContractId host gameOverId
+  
+  -- assert
+  gameOver.prize === Goat
+
+
+-- unhappy path
+gameId_must_be_set : Script ()
+gameId_must_be_set = do
+
+    -- arrange
+    GameSetup{..} <- setupGame 1
+
+    -- act, assert
+    submitMustFail host $ createCmd Game with gameId = "", ..
+
+
+-- unhappy path
+host_cannot_open_nonexistent_door : Script ()
+host_cannot_open_nonexistent_door = do
+
+  -- arrange
+  GameSetup{..} <- setupGame 2
+  playersTurn <- submit host $ exerciseCmd game Start with .. 
+  hostsTurn <- submit player $ exerciseCmd playersTurn Choose with selectedDoorNumber = 2
+
+  -- act, assert
+  submitMustFail host $ exerciseCmd hostsTurn OpenDoor with doorToOpenNumber = 0 

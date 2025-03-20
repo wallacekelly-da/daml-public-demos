@@ -1,0 +1,22 @@
+services:
+
+  domain1:
+    container_name: domain1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.10.0-rc1
+    volumes:
+      - ./configs:/canton/host/configs:r
+    command: daemon --config "/canton/host/configs/domain1.conf" --log-profile container --log-level-root INFO
+
+  participant1:
+    container_name: participant1
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.10.0-rc1
+    volumes:
+      - ./configs:/canton/host/configs:r
+      - ./Assets1/AssetModels/.daml/dist:/canton/host/dist:r
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/participant1.canton" --log-profile container --log-level-root INFO
+    healthcheck:
+      test: [ "CMD", "/usr/local/bin/grpc_health_probe", "--addr", "participant1:5861" ]
+    depends_on:
+      - domain1
+    ports:
+      - 4001:4001

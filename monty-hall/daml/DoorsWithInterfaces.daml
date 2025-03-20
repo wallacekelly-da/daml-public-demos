@@ -1,0 +1,85 @@
+module DoorsWithInterfaces where
+
+data Prize = Goat | Car deriving (Show, Eq)
+
+type OpenedDoorId = ContractId OpenedDoor
+type ClosedDoorId = ContractId ClosedDoor
+type IDoorId = ContractId IDoor
+
+template ClosedDoor
+  with
+    host : Party
+    player : Party
+    gameShowUid : Text
+    number : Int
+    prize : Prize
+
+  where
+    signatory host
+    key (host, gameShowUid, number) : (Party, Text, Int)
+    maintainer key._1
+
+    choice Open : OpenedDoorId
+      controller host
+      do create OpenedDoor with ..
+    
+template OpenedDoor
+  with
+    host : Party
+    player : Party
+    gameShowUid : Text
+    number : Int
+    prize : Prize
+
+  where
+    signatory host
+    observer player
+    key (host, gameShowUid, number) : (Party, Text, Int)
+    maintainer key._1
+
+data DoorView = DoorView
+  with
+    number : Int
+    isOpen : Bool
+  
+interface IDoor where
+  viewtype DoorView
+  getHost : Party
+
+  interface instance IDoor for ClosedDoor where
+    view = DoorView number False
+    getHost = host
+
+  interface instance IDoor for OpenedDoor where
+    view = DoorView number True
+    getHost = host
+
+template Doors
+  with
+    host : Party
+    player : Party
+    gameShowUid : Text
+    doors : [ContractId IDoor]
+
+  where
+    signatory host
+    observer player
+  
+createDoor : Party -> Party -> Text -> Int -> Int -> Update IDoorId
+createDoor host player gameShowUid winningDoorNumber number = do
+  let prize | number == winningDoorNumber = Car
+            | otherwise = Goat
+  toInterfaceContractId @IDoor <$> create ClosedDoor with..
+
+createDoorsRec : Party -> Party -> Text -> Int -> Int -> [IDoorId] -> Update [IDoorId]
+createDoorsRec host player gameShowUid remainingCount winningDoor doors = do
+  if remainingCount == 0
+  then return doors
+  else do
+    let newDoorNumber = length doors + 1
+    newDoor <- createDoor host player gameShowUid winningDoor newDoorNumber
+    createDoorsRec host player gameShowUid (remainingCount - 1) winningDoor (newDoor :: doors)
+
+createDoors : Party -> Party -> Text -> Int -> Int -> Update [IDoorId]
+createDoors host player gameShowUid doorCount winningDoor =
+  createDoorsRec host player gameShowUid doorCount winningDoor []

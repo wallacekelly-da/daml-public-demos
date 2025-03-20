@@ -1,0 +1,54 @@
+module Scripts where
+
+import Daml.Script
+-- import qualified Assets1 as A1
+import Helpers
+import Assets2
+import Interfaces
+import DA.Foldable (forA_)
+
+setup : Script ()
+setup = script do
+  (alice, _aliceId) <- findOrAllocateUser "Alice"
+  (charlie, _charlie) <- findOrAllocateUser "Charlie"
+
+  aliceDVDs <- submit alice do
+    createCmd Asset2 with
+      issuer = alice
+      owner = alice
+      desc = "discs"
+      num = 5
+
+  _charlieDVDs <- submit alice do
+    exerciseCmd aliceDVDs Give with newOwner = charlie
+
+  debugRaw "DVDs created and given to Charlie"
+
+listAssets : Script ()
+listAssets = script do
+  (alice, _aliceId) <- findOrAllocateUser "Alice"
+
+  assets <- queryInterface @IAsset alice
+  forA_ assets (\(cid, Some a) -> do
+      owner <- getDisplayName a.owner
+      debugRaw $ "Asset"
+                  <> a.version <> ": "
+                  <> owner <> "'s "
+                  <> show a.quantity <> " "
+                  <> a.id
+    )
+
+takeBackAll : Script ()
+takeBackAll = script do
+  (alice, _aliceId) <- findOrAllocateUser "Alice"
+  
+  assets <- queryInterface @IAsset alice
+  forA_ assets (\(cid, Some a) -> do
+      submit alice $ exerciseCmd cid TakeBack
+      owner <- getDisplayName a.owner
+      debugRaw $ "Took back Asset"
+                  <> a.version <> ": "
+                  <> owner <> "'s "
+                  <> show a.quantity <> " "
+                  <> a.id
+    )

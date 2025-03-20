@@ -1,0 +1,64 @@
+services:
+
+  mydomain:
+    container_name: mydomain
+    image: digitalasset/canton-open-source:2.7.9
+    volumes:
+      - ./configs:/canton/host/configs
+    command: daemon --config "/canton/host/configs/mydomain.conf" --log-profile container --log-level-root INFO
+    expose:
+      - 4201
+      - 4202
+
+  participant1:
+    container_name: participant1
+    image: digitalasset/canton-open-source:2.7.9
+    volumes:
+      - ./configs:/canton/host/configs
+    command: daemon --config "/canton/host/configs/participant1.conf" --bootstrap "/canton/host/configs/bootstrap.canton" --log-profile container --log-level-root INFO
+    depends_on:
+      - mydomain
+      - mockauth
+    expose:
+      - 4001
+      - 4002
+    ports:
+      - 4001:4001
+      - 4002:4002
+
+  participant2:
+    container_name: participant2
+    image: digitalasset/canton-open-source:2.7.9
+    volumes:
+      - ./configs:/canton/host/configs
+    command: daemon --config "/canton/host/configs/participant2.conf" --bootstrap "/canton/host/configs/bootstrap.canton" --log-profile container --log-level-root INFO
+    depends_on:
+      - mydomain
+    expose:
+      - 4001
+      - 4002
+    ports:
+      - 4003:4001
+      - 4004:4002
+
+  mockauth:
+    container_name: mockauth
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.8
+    volumes:
+      - ./configs:/configs
+    environment:
+      - SERVER_PORT=80
+      - JSON_CONFIG_PATH=/configs/mockauth.json
+    expose:
+      - "80:80"
+    ports:
+      - "8080:80"
+
+  console:
+    container_name: console
+    image: mock-oauth2-demo-console
+    build:
+      context: console/
+      dockerfile: Dockerfile
+    volumes:
+      - ./configs:/home/daml/configs

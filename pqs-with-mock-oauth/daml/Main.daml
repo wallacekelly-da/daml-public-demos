@@ -1,0 +1,8 @@
+module Main where
+
+template Asset
+  with
+    owner: Party
+    desc: Text
+  where
+    signatory owner

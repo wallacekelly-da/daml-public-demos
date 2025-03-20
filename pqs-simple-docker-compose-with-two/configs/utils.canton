@@ -1,0 +1,9 @@
+utils.retry_until_true(
+  participant1.parties.list().exists(p => p.party.toProtoPrimitive.startsWith("alice::"))
+  && participant2.parties.list().exists(p => p.party.toProtoPrimitive.startsWith("bob::"))
+)
+
+utils.generate_daml_script_participants_conf(
+  file=Some("/canton/host/configs/participant-config.json"),
+  defaultParticipant=Some(participant1)
+)

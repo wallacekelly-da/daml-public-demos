@@ -1,0 +1,8 @@
+sdk-version: 2.7.9
+name: console
+version: 1.0.0
+source: Main.daml
+dependencies:
+- daml-prim
+- daml-stdlib
+- daml-script

@@ -1,0 +1,22 @@
+module Assets2 where
+
+type AssetId = ContractId Asset2
+
+template Asset2
+  with
+    issuer : Party
+    owner  : Party
+    desc   : Text
+    num    : Int
+  where
+    ensure desc /= ""
+           && num > 0
+    signatory issuer
+    observer owner
+
+    choice Give : AssetId
+      with
+        newOwner : Party
+      controller owner
+      do create this with
+           owner = newOwner

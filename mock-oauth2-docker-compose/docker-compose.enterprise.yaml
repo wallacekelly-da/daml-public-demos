@@ -1,0 +1,10 @@
+services:
+
+  mydomain:
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.7.9
+
+  participant1:
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.7.9
+
+  participant2:
+    image: digitalasset-docker.jfrog.io/canton-enterprise:2.7.9

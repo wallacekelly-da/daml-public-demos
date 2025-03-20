@@ -1,0 +1,6 @@
+import com.digitalasset.canton.concurrent.Threading
+
+val thisNode = participants.local.head
+thisNode.domains.connect(thisNode.name, connection="http://mydomain:5001")
+thisNode.dars.upload("/canton/host/dist/demo-0.0.1.dar")
+thisNode.parties.enable(name="alice", displayName=Some("alice"))
