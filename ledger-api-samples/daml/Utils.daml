@@ -1,0 +1,29 @@
+module Utils where
+
+import Daml.Script
+import DA.Text qualified as T
+
+getOrAllocateParty : Text -> Script Party
+getOrAllocateParty name = do
+   partyDetails <- filter (.isLocal) <$> listKnownParties
+   case find (\pd -> pd.displayName == Some name || T.isPrefixOf ("'" <> name <> "::") (show pd.party)) partyDetails of
+     Some pd -> do
+       debugRaw $ "Found party: " <> name
+       pure pd.party
+     None -> do
+       debugRaw $ "Creating party: " <> name
+       allocatePartyWithHint name (PartyIdHint name)
+ 
+getOrAllocatePartyAndUser : Text -> [Party] -> Script (Party, UserId)
+getOrAllocatePartyAndUser name canAlsoActAs = do
+  party <- getOrAllocateParty name
+  users <- listAllUsers
+  case find (\u -> u.primaryParty == Some party) users of
+    Some user -> do
+      debugRaw $ "Found user: " <> name
+      pure (party, user.userId)
+    None -> do
+      debugRaw $ "Creating user: " <> name
+      userId <- validateUserId (T.asciiToLower name)
+      createUser (User userId (Some party)) $ CanActAs party :: map CanActAs canAlsoActAs
+      pure (party, userId)
