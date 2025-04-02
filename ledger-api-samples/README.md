@@ -2,6 +2,11 @@
 
 A collection of `curl`, `grpcurl`, and Postman calls.
 
+## Prequisites
+
+* [jq](https://jqlang.org/download/)
+* [grpcurl](https://github.com/fullstorydev/grpcurl)
+
 ## Setup
 
 To get the collection in bash:
@@ -207,7 +212,7 @@ grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" \
 ```
 grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
   com.daml.ledger.api.v2.PackageService.ListPackages `
-  | grep ${PACKAGE_ID}
+  | Select-String -Pattern ${PACKAGE_ID}
 ```
 
 #### List known packages (bash, pwsh):
@@ -221,7 +226,7 @@ grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" \
 ```
 grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
   com.daml.ledger.api.v2.admin.PackageManagementService.ListKnownPackages `
-  | grep -B 1 -A 4 ${PACKAGE_ID}
+  | Select-String -Pattern ${PACKAGE_ID} -Context 1,4
 ```
 
 #### List known packages and DAR file names using Daml Assistant (bash, pwsh):
@@ -233,7 +238,7 @@ daml packages list --host ${LEDGER_HOST} --port ${LEDGER_PORT} \
 
 ```
 daml packages list --host ${LEDGER_HOST} --port ${LEDGER_PORT} `
-  | sort --key 2
+  | Sort-Object -Property { $_.Split(" ")[1] }
 ```
 
 #### List the DARs using the Admin API (bash, pwsh):
@@ -309,7 +314,7 @@ grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
 ```
 grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} `
   com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties `
-  | grep ${PARTICIPANT_ID}
+  | Select-String -Pattern ${PARTICIPANT_ID}
 ```
 
 #### List known parties using Daml Assistant (bash, pwsh):
@@ -321,7 +326,7 @@ daml ledger list-parties --host ${LEDGER_HOST} --port ${LEDGER_PORT} \
 
 ```
 daml ledger list-parties --host ${LEDGER_HOST} --port ${LEDGER_PORT} `
-  | grep 'isLocal = True'
+  | Select-String -Pattern 'isLocal = True'
 ```
 
 ### Read Contracts
