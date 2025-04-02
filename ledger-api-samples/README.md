@@ -6,6 +6,7 @@ A collection of `curl`, `grpcurl`, and Postman calls.
 
 * [jq](https://jqlang.org/download/)
 * [grpcurl](https://github.com/fullstorydev/grpcurl)
+* [websocat](https://github.com/vi/websocat)
 
 ## Setup
 
@@ -59,12 +60,49 @@ $LEDGER_JSON = "7575"
 
 ## JSON API
 
-[Full documentation](https://docs.digitalasset.com/canton/3.3/usermanual/json-api/index.html)
+[Full documentation](https://docs.digitalasset.com/build/3.3/explanations/json-api/)
 
 #### Check the health:
 
 ```
 curl "http://${LEDGER_HOST}:${LEDGER_JSON}/readyz"
+```
+
+#### Get the local parties
+
+TODO
+
+#### Get a specific party
+
+TODO
+
+#### Get the current ledger offset
+
+```
+export LEDGER_END=$(
+  curl -s "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/ledger-end" \
+    | jq -r .offset
+); echo $LEDGER_END
+```
+
+#### Get the active contracts:
+
+```
+echo '
+{
+  "verbose": true,
+  "activeAtOffset": "'${LEDGER_END}'",
+  "filter": {
+    "filtersByParty" : {
+      "'${PARTY_ID}'": {
+        "cumulative": []
+      }
+    }
+  }
+}
+' | jq -c \
+  | websocat -n1 ws://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/active-contracts \
+  | jq
 ```
 
 ## gRPC
