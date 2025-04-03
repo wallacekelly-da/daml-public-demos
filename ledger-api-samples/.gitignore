@@ -1,2 +1,6 @@
 /.daml
 /log
+.scala-build/
+.bsp/
+actives.json
+*.jwt
