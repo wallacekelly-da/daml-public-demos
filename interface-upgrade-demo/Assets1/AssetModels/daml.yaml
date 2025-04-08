@@ -1,0 +1,13 @@
+# for config file options, refer to
+# https://docs.daml.com/tools/assistant.html#project-config-file-daml-yaml
+
+sdk-version: 2.9.5
+name: AssetModels
+source: daml
+init-script: Assets:setup
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+  - ../../AssetInterface/.daml/dist/AssetInterface-0.0.1.dar
