@@ -1,6 +1,6 @@
 # Ledger API Samples
 
-A collection of `grpcurl`, `curl`, `websocat`, and Postman calls.
+A collection of `grpcurl`, `curl`, and `websocat` commands.
 
 ## Prequisites
 
@@ -8,9 +8,14 @@ A collection of `grpcurl`, `curl`, `websocat`, and Postman calls.
 * [grpcurl](https://github.com/fullstorydev/grpcurl)
 * [websocat](https://github.com/vi/websocat)
 
-## Setup
+## References
 
-To get the collection in bash:
+* [Ledger API](https://docs.digitalasset.com/build/3.3/reference/lapi-proto-docs/)
+* [Ledger JSON API](https://docs.digitalasset.com/build/3.3/explanations/json-api/)
+
+## Sandbox Setup
+
+**Get** the collection (bash, pwsh):
 
 ```
 git clone \
@@ -19,9 +24,8 @@ git clone \
   --depth 1 \
   --branch ledger-api-samples \
   ledger-api-samples
-```
 
-To get the collection in pwsh:
+```
 
 ```
 git clone `
@@ -32,367 +36,605 @@ git clone `
   ledger-api-samples
 ```
 
-To start the ledger:
+**Change** into the working folder.
 
 ```
-cd ledger-api-samples
-
-daml start
+cd ledger-api-samples/ledger-api-samples
 ```
 
-Set environment variables in bash:
+
+Optionally **start** the mock OAuth service (bash, pwsh):
+
+```
+docker run -it --rm \
+  --publish 8080:8080 \
+  --env LOG_LEVEL=DEBUG \
+  --env JSON_CONFIG_PATH=/host/mockauth.json \
+  --volume ./configs/:/host/ \
+  ghcr.io/navikt/mock-oauth2-server:2.1.10
+```
+
+```
+docker run -it --rm `
+  --publish 8080:8080 `
+  --env LOG_LEVEL=DEBUG `
+  --env JSON_CONFIG_PATH=/host/mockauth.json `
+  --volume ./configs:/host/ `
+  ghcr.io/navikt/mock-oauth2-server:2.1.10
+```
+
+Optionally **confirm** the mock OAuth service is working (bash, pwsh):
+
+```
+curl --silent \
+  --location localhost:8080/mockauth/token \
+  --header 'Content-Type: application/x-www-form-urlencoded' \
+  --data-urlencode 'grant_type=client_credentials' \
+  --data-urlencode 'client_id=participant_admin' \
+  --data-urlencode 'client_secret=secret' \
+  --data-urlencode 'participant_id=participant_id_here' \
+| jq --raw-output \
+  '.access_token
+  | split(".")
+  | .[1]
+  | @base64d' \
+| jq
+```
+
+```
+curl --silent `
+  --location localhost:8080/mockauth/token `
+  --header 'Content-Type: application/x-www-form-urlencoded' `
+  --data-urlencode 'grant_type=client_credentials' `
+  --data-urlencode 'client_id=participant_admin' `
+  --data-urlencode 'client_secret=secret' `
+  --data-urlencode 'participant_id=participant_id_here' `
+| jq --raw-output `
+  '.access_token
+  | split(".")
+  | .[1]
+  | @base64d' `
+| jq
+```
+
+The result should look something like this:
+
+```json
+{
+  "sub": "participant_admin",
+  "aud": "https://daml.com/jwt/aud/participant/participant_id_here",
+  "nbf": 1744033119,
+  "iss": "http://localhost:8080/mockauth",
+  "exp": 317320036719,
+  "iat": 1744033119,
+  "jti": "501e80b2-74eb-46ee-858b-152e63859160"
+}
+```
+
+**Start** the ledger:
+
+```
+daml sandbox --config configs/sandbox3.conf --log-level-canton DEBUG
+```
+
+
+## Environment Variables
+
+**Set** environment variables (bash, pwsh):
 
 ```
 export LEDGER_HOST=localhost
 export LEDGER_PORT=6865
 export LEDGER_ADMIN=6866
 export LEDGER_JSON=7575
-export USER_ID=alice
+export ALICE_USERID=alice
+export BOB_USERID=bob
 ```
-
-Set variables in pwsh:
 
 ```
 $LEDGER_HOST = "localhost"
 $LEDGER_PORT = "6865"
 $LEDGER_ADMIN = "6866"
 $LEDGER_JSON = "7575"
-$USER_ID = "alice"
+$ALICE_USERID = "alice"
+$BOB_USERID = "bob"
 ```
 
-## JSON API
-
-[Full documentation](https://docs.digitalasset.com/build/3.3/explanations/json-api/)
-
-### Authentication
-
-TODO: test the following.
-
-If the target Ledger API requires a JWT, store the token in `LEDGER_TOKEN` and include the following in the `grpcurl` call:
+**Get** the participant id from the Admin API (bash, pwsh):
 
 ```
--H "Authorization: Bearer ${LEDGER_TOKEN}"
+export PARTICIPANT_ID=$(
+  grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" \
+    com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus \
+  | jq --raw-output '.status.commonStatus.uid'
+); echo ${PARTICIPANT_ID}
 ```
 
-### Reflection
+```
+$PARTICIPANT_ID=$( `
+  grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" `
+    com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus `
+  | jq --raw-output '.status.commonStatus.uid' `
+); echo ${PARTICIPANT_ID}
+```
 
-TODO
+**Set** tokens to a default, Sandbox token (bash, pwsh):
 
-### Service Status
+```
+export ADMIN_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOltdLCJleHAiOm51bGwsImlzcyI6bnVsbCwic2NvcGUiOiJFeHBlY3RlZFRhcmdldFNjb3BlIiwic3ViIjoicGFydGljaXBhbnRfYWRtaW4ifQ.8bABNm1t718TuJXwRQOF2gXOclrL38t0uCmWkIT7Pcg
+export ALICE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOltdLCJleHAiOm51bGwsImlzcyI6bnVsbCwic2NvcGUiOiJFeHBlY3RlZFRhcmdldFNjb3BlIiwic3ViIjoicGFydGljaXBhbnRfYWRtaW4ifQ.8bABNm1t718TuJXwRQOF2gXOclrL38t0uCmWkIT7Pcg
+```
 
-#### Check the health:
+```
+$ADMIN_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOltdLCJleHAiOm51bGwsImlzcyI6bnVsbCwic2NvcGUiOiJFeHBlY3RlZFRhcmdldFNjb3BlIiwic3ViIjoicGFydGljaXBhbnRfYWRtaW4ifQ.8bABNm1t718TuJXwRQOF2gXOclrL38t0uCmWkIT7Pcg"
+$ALICE_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOltdLCJleHAiOm51bGwsImlzcyI6bnVsbCwic2NvcGUiOiJFeHBlY3RlZFRhcmdldFNjb3BlIiwic3ViIjoicGFydGljaXBhbnRfYWRtaW4ifQ.8bABNm1t718TuJXwRQOF2gXOclrL38t0uCmWkIT7Pcg"
+```
+
+**Generate** a mocked JWT token for the `participant_admin` user (bash, pwsh):
+
+```
+export ADMIN_TOKEN=$( \
+  curl --silent \
+    --location localhost:8080/mockauth/token \
+    --header "Content-Type: application/x-www-form-urlencoded" \
+    --data-urlencode "grant_type=client_credentials" \
+    --data-urlencode "client_id=participant_admin" \
+    --data-urlencode "client_secret=secret" \
+    --data-urlencode "participant_id=${PARTICIPANT_ID}" \
+  | jq --raw-output '.access_token' \
+);
+
+echo ${ADMIN_TOKEN} \
+| jq --raw-input --raw-output \
+    'split(".")
+    | .[1]
+    | @base64d' \
+| jq
+```
+
+```
+$ADMIN_TOKEN=$( `
+  curl --silent `
+    --location localhost:8080/mockauth/token `
+    --header "Content-Type: application/x-www-form-urlencoded" `
+    --data-urlencode "grant_type=client_credentials" `
+    --data-urlencode "client_id=participant_admin" `
+    --data-urlencode "client_secret=secret" `
+    --data-urlencode "participant_id=${PARTICIPANT_ID}" `
+  | jq --raw-output '.access_token' `
+);
+
+echo ${ADMIN_TOKEN} `
+| jq --raw-input --raw-output `
+    'split(".")
+    | .[1]
+    | @base64d' `
+| jq
+```
+
+## Service health
+
+**Check** the health of the Ledger API (bash, pwsh):
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" \
+  grpc.health.v1.Health.Check
+```
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
+  grpc.health.v1.Health.Check
+```
+
+**Check** the readiness of the Ledger JSON API:
 
 ```
 curl "http://${LEDGER_HOST}:${LEDGER_JSON}/readyz"
 ```
 
-### DARs, Packages, Parties, Users
+## Parties and users
 
-#### List all packages
-
-```
-curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/packages" \
-  | jq
-```
-
-```
-curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/packages" `
-  | jq
-```
-
-
-
-#### Get the local parties (bash, pwsh)
-
-```
-curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" \
-  | jq --raw '.partyDetails[] | select (.isLocal == true) | .party'
-```
-
-```
-curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" `
-  | jq --raw '.partyDetails[] | select (.isLocal == true) | .party'
-```
-
-#### Get a specific party (bash, pwsh)
-
-```
-export PARTY_ID=$(
-  curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" \
-    | jq --raw '.partyDetails[] | select (.isLocal == true) | select(.party | startswith("Alice::")) | .party' \
-); echo ${PARTY_ID}
-```
-
-```
-$PARTY_ID=$(
-  curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" `
-    | jq --raw '.partyDetails[] | select (.isLocal == true) | select(.party | startswith("Alice::")) | .party' `
-); echo ${PARTY_ID}
-```
-
-#### List the users (bash, pwsh)
-
-```
-curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users" \
-  | jq --raw '.users[] | { id, primaryParty }'
-```
-
-```
-curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users" `
-  | jq --raw '.users[] | { id, primaryParty }'
-```
-
-#### List a user's rights (bash, pwsh)
-
-```
-curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users/${USER_ID}/rights" \
-  | jq
-```
-
-```
-curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users/${USER_ID}/rights" `
-  | jq
-```
-
-### Read Contracts
-
-#### Get the current ledger offset (bash, pwsh):
-
-```
-export LEDGER_OFFSET=$(
-  curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/ledger-end" \
-    | jq --raw .offset
-); echo $LEDGER_OFFSET
-```
-
-```
-$LEDGER_OFFSET=$( `
-  curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/ledger-end" `
-    | jq --raw .offset `
-); echo $LEDGER_OFFSET
-```
-
-#### Get the active contracts over websocket (bash, pwsh):
+**Create** a party with the Ledger API: (bash, pwsh)
 
 ```
 echo '
 {
-  "verbose": true,
-  "activeAtOffset": "'${LEDGER_OFFSET}'",
-  "filter": {
-    "filtersByParty" : {
-      "'${PARTY_ID}'": {
-        "cumulative": []
-      }
-    }
-  }
+  "party_id_hint": "'${ALICE_USERID}'"
 }
-' | jq --compact \
-  | websocat -n1 ws://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/active-contracts \
-  | jq \
-  >> actives.json
+' | grpcurl -plaintext -d @ \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${LEDGER_HOST}:${LEDGER_PORT}" \
+      com.daml.ledger.api.v2.admin.PartyManagementService.AllocateParty \
+  | jq
 ```
 
 ```
 @"
 {
-  "verbose": true,
-  "activeAtOffset": "${LEDGER_OFFSET}",
-  "filter": {
-    "filtersByParty" : {
-      "'${PARTY_ID}'": {
-        "cumulative": []
-      }
-    }
-  }
+  "party_id_hint": "${ALICE_USERID}"
 }
-"@ | jq --compact `
-   | websocat -n1 ws://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/active-contracts `
-   | jq `
-   | Tee-Object -FilePath "actives.json"
+"@ | grpcurl -plaintext -d `@ `
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" `
+      "${LEDGER_HOST}:${LEDGER_PORT}" `
+      com.daml.ledger.api.v2.admin.PartyManagementService.AllocateParty `
+   | jq
 ```
 
-#### Get the active contracts over HTTP (bash, pwsh):
+**Create** a party with the Ledger JSON API: (bash, pwsh)
 
 ```
 echo '
 {
-  "verbose": true,
-  "activeAtOffset": "'${LEDGER_OFFSET}'",
-  "filter": {
-    "filtersByParty": {},
-    "filtersForAnyParty": {
-      "cumulative": [
-        {
-          "identifierFilter": {
-            "WildcardFilter": {
-              "value": {
-                "includeCreatedEventBlob": true
-              }
-            }
-          }
-        }
-      ]
-    }
-  }
+  "partyIdHint": "'${BOB_USERID}'",
+  "displayName": "'${BOB_USERID}'",
+  "identityProviderId": ""
 }
-' | jq --compact \
-  | curl --silent --json @- "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/active-contracts" \
-  | jq \
-  | tee actives.json
+' | jq --compact-output \
+  | curl --silent --json @- \
+      --oauth2-bearer ${ADMIN_TOKEN} \
+      "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" \
+  | jq
 ```
 
 ```
 @"
 {
-  "verbose": true,
-  "activeAtOffset": "${LEDGER_OFFSET}",
-  "filter": {
-    "filtersByParty": {},
-    "filtersForAnyParty": {
-      "cumulative": [
-        {
-          "identifierFilter": {
-            "WildcardFilter": {
-              "value": {
-                "includeCreatedEventBlob": true
-              }
-            }
-          }
-        }
-      ]
-    }
+  "partyIdHint": "${BOB_USERID}",
+  "displayName": "${BOB_USERID}",
+  "identityProviderId": ""
+}
+"@ | jq --compact-output `
+   | curl --silent --json `@- `
+      --oauth2-bearer ${ADMIN_TOKEN} `
+      "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" `
+   | jq
+```
+
+**Get** the local parties using Ledger API (bash, pwsh):
+
+```
+grpcurl -plaintext \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  ${LEDGER_HOST}:${LEDGER_PORT} \
+  com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties \
+| jq \
+    '.party_details[]
+    | select(.is_local)'
+```
+
+```
+grpcurl -plaintext \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  ${LEDGER_HOST}:${LEDGER_PORT} \
+  com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties \
+| jq `
+    '.party_details[]
+    | select(.is_local)'
+```
+
+**Get** the local parties using Ledger JSON API (bash, pwsh):
+
+```
+curl --silent \
+  --oauth2-bearer ${ADMIN_TOKEN} \
+  "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" \
+| jq --raw-output \
+    '.partyDetails[]
+    | select (.isLocal == true)
+    | .party'
+```
+
+```
+curl --silent `
+  --oauth2-bearer ${ADMIN_TOKEN} `
+  "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" `
+| jq --raw-output `
+    '.partyDetails[]
+    | select (.isLocal == true)
+    | .party'
+```
+
+**List** local parties using Daml Assistant (bash, pwsh):
+
+```
+echo ${ADMIN_TOKEN} > admin.jwt; \
+daml ledger list-parties \
+  --host ${LEDGER_HOST} \
+  --port ${LEDGER_PORT} \
+  --access-token-file admin.jwt \
+  | grep 'isLocal = True'
+```
+
+```
+daml ledger list-parties --host ${LEDGER_HOST} --port ${LEDGER_PORT} `
+  | Select-String -Pattern 'isLocal = True'
+```
+
+**Get** a specific party using Ledger API (bash, pwsh):
+
+```
+export ALICE_PARTY=$(
+  grpcurl -plaintext \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+    ${LEDGER_HOST}:${LEDGER_PORT} \
+    com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties \
+  | jq --raw-output \
+      '.party_details[]
+      | select(.is_local)
+      | select(.party | startswith("'${ALICE_USERID}::'"))
+      | .party' \
+); echo ${ALICE_PARTY}
+```
+
+```
+export ALICE_PARTY=$(
+  grpcurl -plaintext `
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" `
+    ${LEDGER_HOST}:${LEDGER_PORT} `
+    com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties `
+  | jq --raw-output `
+      '.party_details[]
+      | select(.is_local)
+      | select(.party | startswith("${ALICE_USERID}::"))
+      | .party' `
+  ); echo ${ALICE_PARTY}
+```
+
+**Get** a specific party using Ledger JSON API (bash, pwsh):
+
+```
+export BOB_PARTY=$(
+  curl --silent \
+    --oauth2-bearer ${ADMIN_TOKEN} \
+    "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" \
+    | jq --raw-output \
+        '.partyDetails[] | select(.isLocal) | select(.party | startswith("'${BOB_USERID}'::")) | .party'
+); echo ${BOB_PARTY}
+```
+
+```
+$BOB_PARTY=$( `
+  curl --silent `
+    --oauth2-bearer ${ADMIN_TOKEN} `
+    "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/parties" `
+    | jq --raw-output ".partyDetails[] | select(.isLocal) | select(.party | startswith(`"${ALICE_USERID}::`")) | .party" `
+); echo ${BOB_PARTY}
+```
+
+**Create** a user with the Ledger API (bash, pwsh):
+
+```
+echo '
+{
+  "user": {
+    "id": "'${ALICE_USERID}'",
+    "primary_party": "'${ALICE_PARTY}'"
   }
 }
-"@ | jq --compact `
-   | curl --silent --json `@- "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/active-contracts" `
-   | jq `
-   | Tee-Object -FilePath "actives.json"
-```
-
-## gRPC
-
-[Full documentation](https://docs.digitalasset.com/build/references/ledger-grpc-api-reference/index.html)
-
-### Authentication
-
-If the target Ledger API requires a JWT, store the token in `LEDGER_TOKEN` and include the following in the `grpcurl` call:
-
-```
--H "Authorization: Bearer ${LEDGER_TOKEN}"
-```
-
-### Reflection
-
-#### List the services (bash, pwsh):
-
-```
-grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
-  list
+' | grpcurl -plaintext -d @ \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${LEDGER_HOST}:${LEDGER_PORT}" \
+      com.daml.ledger.api.v2.admin.UserManagementService.CreateUser \
+  | jq
 ```
 
 ```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
-  list
+@"
+{
+  "user": {
+    "id": "${ALICE_USERID}",
+    "primary_party": "${ALICE_PARTY}"
+  }
+}
+"@ | grpcurl -plaintext -d `@ `
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" `
+      "${LEDGER_HOST}:${LEDGER_PORT}" `
+      com.daml.ledger.api.v2.admin.UserManagementService.CreateUser `
+   | jq
 ```
 
-#### List the methods on a service (bash, pwsh):
+**Create** a user with the Ledger JSON API (bash, pwsh):
 
 ```
-grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
-  list grpc.health.v1.Health
+echo '
+{
+  "rights" : [
+    {
+      "kind": {
+        "CanActAs" : {
+          "value": {
+            "party" : "'${BOB_PARTY}'"
+          }
+        }
+      }
+    }
+  ],
+  "user" : {
+    "id" : "'${BOB_USERID}'",
+    "identityProviderId" : "",
+    "isDeactivated" : false,
+    "metadata" : null,
+    "primaryParty" : "'${BOB_PARTY}'"
+  }
+}
+' | jq --compact-output \
+  | curl --silent --json @- \
+      --oauth2-bearer ${ADMIN_TOKEN} \
+      "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users" \
+  | jq
 ```
 
-```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
-  list grpc.health.v1.Health
-```
+TODO: pwsh
 
-#### Describe the methods on a service (bash, pwsh):
+**List** the users with Ledger API (bash, pwsh):
 
-```
-grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
-  describe grpc.health.v1.Health.Check
-```
+TODO
+
+**List** the users with Ledger JSON API (bash, pwsh):
 
 ```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
-  describe grpc.health.v1.Health.Check
-```
-
-#### Describe a message (bash, pwsh):
-
-```
-grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
-  describe grpc.health.v1.HealthCheckResponse
-```
-
-```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
-  describe grpc.health.v1.HealthCheckResponse
-```
-
-### Service Status
-
-#### Check the gRPC health (bash, pwsh):
-
-```
-grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
-  grpc.health.v1.Health.Check
-```
-
-```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
-  grpc.health.v1.Health.Check
-```
-
-#### Get the ledger version information (bash, pwsh):
-
-```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" \
-  com.daml.ledger.api.v2.VersionService.GetLedgerApiVersion
-```
-
-```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
-  com.daml.ledger.api.v2.VersionService.GetLedgerApiVersion
-```
-
-#### Get the participant status from the Admin API (bash, pwsh):
-
-```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" \
-  com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus
+curl --silent \
+  --oauth2-bearer ${ADMIN_TOKEN} \
+  "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users" \
+  | jq --raw-output '.users[] | { id, primaryParty }'
 ```
 
 ```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" `
-  com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus
+curl --silent `
+  --oauth2-bearer ${ADMIN_TOKEN} `
+  "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users" `
+  | jq --raw-output '.users[] | { id, primaryParty }'
 ```
 
-#### Get the participant ID from the Admin API (bash, pwsh):
+**Grant** a user's rights using Ledger API (bash, pwsh):
 
 ```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" \
-  com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus \
-  | jq --raw '.status.commonStatus.uid'
+echo '
+{
+  "userId": "'${ALICE_USERID}'",
+  "identityProviderId": "",
+  "rights": [
+    {
+      "can_act_as": {
+        "party": "'${ALICE_PARTY}'"
+      }
+    }
+  ]
+}
+' | jq --compact-output \
+  | grpcurl --plaintext -d @ \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${LEDGER_HOST}:${LEDGER_PORT}" \
+      com.daml.ledger.api.v2.admin.UserManagementService.GrantUserRights \
+  | jq
+```
+
+TODO
+
+**Grant** a user's rights using Ledger JSON API (bash, pwsh):
+
+```
+echo '
+{
+  "userId": "'${BOB_USERID}'",
+  "identityProviderId": "",
+  "rights": [
+    {
+      "kind": {
+        "CanReadAs" : {
+          "value": {
+            "party" : "'${BOB_PARTY}'"
+          }
+        }
+      }
+    }
+  ]
+}
+' | jq --compact-output \
+  | curl --silent --json @- \
+      --oauth2-bearer ${ADMIN_TOKEN} \
+      "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users/${BOB_USERID}/rights" \
+  | jq
+```
+
+TODO: pwsh
+
+**List** a user's rights using Ledger API (bash, pwsh):
+
+TODO
+
+**List** a user's rights using Ledger JSON API (bash, pwsh):
+
+```
+curl --silent \
+  --oauth2-bearer ${ADMIN_TOKEN} \
+  "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users/${BOB_USERID}/rights" \
+  | jq
 ```
 
 ```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" `
-  com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus `
-  | jq --raw '.status.commonStatus.uid'
+curl --silent `
+  --oauth2-bearer ${ADMIN_TOKEN} `
+  "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/users/${BOB_USERID}/rights" `
+  | jq
 ```
 
-### DARs, Packages, Parties, Users
+**Generate** a mocked JWT token for a user (bash, pwsh):
 
-#### Get the main package id for a given DAR (bash, pwsh):
+```
+export ALICE_TOKEN=$( \
+  curl --silent \
+    --location localhost:8080/mockauth/token \
+    --header "Content-Type: application/x-www-form-urlencoded" \
+    --data-urlencode "grant_type=client_credentials" \
+    --data-urlencode "client_id=${ALICE_USERID}" \
+    --data-urlencode "client_secret=secret" \
+    --data-urlencode "participant_id=${PARTICIPANT_ID}" \
+      | jq --raw-output '.access_token');
+
+echo ${ALICE_TOKEN} \
+  | jq --raw-input --raw-output \
+    'split(".")
+    | .[1]
+    | @base64d' \
+  | jq
+```
+
+```
+$ALICE_TOKEN=$( `
+  curl --silent `
+    --location localhost:8080/mockauth/token `
+   --header "Content-Type: application/x-www-form-urlencoded" `
+    --data-urlencode "grant_type=client_credentials" `
+    --data-urlencode "client_id=${ALICE_USERID}" `
+    --data-urlencode "client_secret=secret" `
+    --data-urlencode "participant_id=${PARTICIPANT_ID}" `
+      | jq --raw-output '.access_token'); echo ${ALICE_TOKEN}
+
+echo ${ALICE_TOKEN} `
+  | jq --raw-input --raw-output `
+    'split(".")
+    | .[1]
+    | @base64d' `
+  | jq
+```
+
+## DARs and Packages
+
+**Encode** a DAR file as a base64 string (bash, pwsh):
+
+```
+export DAR_FILE=$(base64 --wrap 0 \
+    .daml/dist/ledger-api-samples-0.0.1.dar \
+  )
+```
+
+**Upload** a DAR file using the Ledger API (bash, pwsh):
+
+```
+echo '
+{
+  "dar_file": "'${DAR_FILE}'"
+}
+' | grpcurl -plaintext -d @ \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      ${LEDGER_HOST}:${LEDGER_PORT} \
+      com.daml.ledger.api.v2.admin.PackageManagementService.UploadDarFile
+```
+
+TODO: pwsh
+
+**Upload** a DAR file using the Ledger JSON API (bash, pwsh):
+
+TODO
+
+**Get** the main package id for a given DAR (bash, pwsh):
 
 ```
 export PACKAGE_ID=$(
   daml damlc inspect-dar --json \
     .daml/dist/ledger-api-samples-0.0.1.dar \
-    | jq --raw .main_package_id
+    | jq --raw-output .main_package_id
   ); echo ${PACKAGE_ID}
 ```
 
@@ -400,28 +642,48 @@ export PACKAGE_ID=$(
 $PACKAGE_ID=$( `
   daml damlc inspect-dar --json `
     .daml/dist/ledger-api-samples-0.0.1.dar `
-    | jq --raw .main_package_id `
+    | jq --raw-output .main_package_id `
   ); echo ${PACKAGE_ID}
 ```
 
-#### List package ids (bash, pwsh):
+**List** all the packages using Ledger API (bash, pwsh):
 
 ```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" \
-  com.daml.ledger.api.v2.PackageService.ListPackages \
-  | grep ${PACKAGE_ID}
+grpcurl -plaintext \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  "${LEDGER_HOST}:${LEDGER_PORT}" \
+  com.daml.ledger.api.v2.PackageService.ListPackages
 ```
 
 ```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
-  com.daml.ledger.api.v2.PackageService.ListPackages `
-  | Select-String -Pattern ${PACKAGE_ID}
+grpcurl -plaintext `
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" `
+  "${LEDGER_HOST}:${LEDGER_PORT}" `
+  com.daml.ledger.api.v2.PackageService.ListPackages
 ```
 
-#### List known packages (bash, pwsh):
+**List** all the packages using Ledger JSON API (bash, pwsh):
 
 ```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" \
+curl --silent \
+  --oauth2-bearer ${ADMIN_TOKEN} \
+  "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/packages" \
+  | jq
+```
+
+```
+curl --silent `
+  --oauth2-bearer ${ADMIN_TOKEN} `
+  "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/packages" `
+  | jq
+```
+
+**List** the uploaded package using Ledger API (bash, pwsh):
+
+```
+grpcurl -plaintext \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  "${LEDGER_HOST}:${LEDGER_PORT}" \
   com.daml.ledger.api.v2.admin.PackageManagementService.ListKnownPackages \
   | grep -B 1 -A 4 ${PACKAGE_ID}
 ```
@@ -432,10 +694,14 @@ grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
   | Select-String -Pattern ${PACKAGE_ID} -Context 1,4
 ```
 
-#### List known packages and DAR file names using Daml Assistant (bash, pwsh):
+**List** known packages and DAR file names using Daml Assistant (bash, pwsh):
 
 ```
-daml packages list --host ${LEDGER_HOST} --port ${LEDGER_PORT} \
+echo ${ADMIN_TOKEN} > admin.jwt;
+daml packages list \
+    --host ${LEDGER_HOST} \
+    --port ${LEDGER_PORT} \
+    --access-token-file admin.jwt \
   | sort --key 2
 ```
 
@@ -444,103 +710,146 @@ daml packages list --host ${LEDGER_HOST} --port ${LEDGER_PORT} `
   | Sort-Object -Property { $_.Split(" ")[1] }
 ```
 
-#### List the DARs using the Admin API (bash, pwsh):
+**List** the DAR hashes using the Admin API (bash, pwsh):
 
 ```
-grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" \
-  com.digitalasset.canton.admin.participant.v30.PackageService.ListDars
+grpcurl -plaintext \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  "${LEDGER_HOST}:${LEDGER_ADMIN}" \
+  com.digitalasset.canton.admin.participant.v30.PackageService.ListDars \
+| jq
 ```
 
 ```
 grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" `
-  com.digitalasset.canton.admin.participant.v30.PackageService.ListDars
+  com.digitalasset.canton.admin.participant.v30.PackageService.ListDars `
+| jq
 ```
 
-#### Get the participant id (bash, pwsh):
+## Create contracts
+
+**Create** a contract using Ledger API (bash, pwsh):
 
 ```
-export PARTICIPANT_ID=$(
-  grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
-    com.daml.ledger.api.v2.admin.PartyManagementService.GetParticipantId \
-    | jq --raw '.participant_id | split("::").[1]'
-  ); echo ${PARTICIPANT_ID}
+echo '
+{
+  "commands": {
+    "command_id": "somecommandid04",
+    "act_as": [
+      "'${ALICE_PARTY}'"
+    ],
+    "commands": [
+      {
+        "create": {
+          "template_id": {
+            "package_id": "#ledger-api-samples",
+            "module_name": "Main",
+            "entity_name": "Asset"
+          },
+          "create_arguments": {
+            "fields": [
+              {
+                "label": "issuer",
+                "value": {
+                  "party": "'${ALICE_PARTY}'"
+                }
+              },
+              {
+                "label": "owner",
+                "value": {
+                  "party": "'${ALICE_PARTY}'"
+                }
+              },
+              {
+                "label": "name",
+                "value": {
+                  "text": "my asset"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+' | grpcurl -plaintext -d @ \
+      -H "Authorization: Bearer ${ALICE_TOKEN}" \
+      ${LEDGER_HOST}:${LEDGER_PORT} \
+      com.daml.ledger.api.v2.CommandService.SubmitAndWait
 ```
 
-```
-$PARTICIPANT_ID=$(
-  grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} `
-    com.daml.ledger.api.v2.admin.PartyManagementService.GetParticipantId `
-    | jq --raw '.participant_id | split("::").[1]'
-  ); echo ${PARTICIPANT_ID}
-```
+TODO: pwsh
 
-#### List local parties, using jq (bash, pwsh):
+**Create** a contract using Ledger JSON API (bash, pwsh):
+
+
+TODO: fix the following which does not work
 
 ```
-grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
-  com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties \
-  | jq '.party_details[] | select(.is_local)'
+echo '
+{
+  "command_id": "somecommandid01",
+  "user_id": "'${BOB_USERID}'",
+  "act_as": [
+    "'${BOB_PARTY}'"
+  ],
+  "read_as": [
+    "'${BOB_PARTY}'"
+  ],
+  "commands": [
+    {
+      "CreateCommand": {
+        "template_id": "#ledger-api-samples:Main:Asset",
+        "create_arguments": {
+          "issuer": "'${BOB_PARTY}'",
+          "owner": "'${BOB_PARTY}'",
+          "name": "my asset"
+        }
+      }
+    }
+  ],
+  "application_id": "bob",
+  "submission_id": "somesubmissionid01",
+  "workflow_id": "someworkflowid",
+  "domain_id": "",
+  "package_id_selection_preference": [
+    "'${PACKAGE_ID}'"
+  ],
+  "deduplication_period": {
+    "DeduplicationDuration": {
+      "value": {
+        "seconds": 60,
+        "nanos": 0,
+        "unknownFields": {
+          "fields": {}
+        }
+      }
+    }
+  },
+  "disclosed_contracts": []
+}
+' | jq --compact-output \
+  | curl --silent --json @- \
+      --oauth2-bearer ${BOB_TOKEN} \
+      "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/commands/submit-and-wait" \
+  | jq
 ```
 
-```
-grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} `
-  com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties `
-  | jq '.party_details[] | select(.is_local)'
-```
+TODO: pwsh
 
-#### Select a party by party hint (bash, pwsh):
 
-```
-export PARTY_ID=$(
-  grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
-    com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties \
-    | jq --raw '.party_details[] | select(.is_local) | select(.party | startswith("Alice::")) | .party'
-  ); echo ${PARTY_ID}
-```
+## Read Contracts
 
-```
-$PARTY_ID=$( `
-  grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} `
-    com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties `
-    | jq --raw '.party_details[] | select(.is_local) | select(.party | startswith("Alice::")) | .party' `
-  ); echo ${PARTY_ID}
-```
-
-#### List local parties, using grep (bash, pwsh):
-
-```
-grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
-  com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties \
-  | grep ${PARTICIPANT_ID}
-```
-
-```
-grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} `
-  com.daml.ledger.api.v2.admin.PartyManagementService.ListKnownParties `
-  | Select-String -Pattern ${PARTICIPANT_ID}
-```
-
-#### List known parties using Daml Assistant (bash, pwsh):
-
-```
-daml ledger list-parties --host ${LEDGER_HOST} --port ${LEDGER_PORT} \
-  | grep 'isLocal = True'
-```
-
-```
-daml ledger list-parties --host ${LEDGER_HOST} --port ${LEDGER_PORT} `
-  | Select-String -Pattern 'isLocal = True'
-```
-
-### Read Contracts
-
-#### Get a ledger offset (bash, pwsh):
+**Get** the current ledger offset using Ledger API (bash, pwsh):
 
 ```
 export LEDGER_OFFSET=$(
-  grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" \
+  grpcurl -plaintext \
+    -H "Authorization: Bearer ${ALICE_TOKEN}" \
+    "${LEDGER_HOST}:${LEDGER_PORT}" \
     com.daml.ledger.api.v2.StateService.GetLedgerEnd \
-    | jq --raw '.offset'
+    | jq --raw-output '.offset'
   ); echo ${LEDGER_OFFSET}
 ```
 
@@ -548,26 +857,47 @@ export LEDGER_OFFSET=$(
 $LEDGER_OFFSET=$( `
   grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
     com.daml.ledger.api.v2.StateService.GetLedgerEnd `
-    | jq --raw '.offset'
+    | jq --raw-output '.offset'
   ); echo ${LEDGER_OFFSET}
 ```
 
-#### Get the active contracts (bash, pwsh):
+**Get** the current ledger offset using Ledger JSON API (bash, pwsh):
+
+```
+export LEDGER_OFFSET=$(
+  curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/ledger-end" \
+      --oauth2-bearer ${ALICE_TOKEN} \
+    | jq --raw-output .offset
+); echo ${LEDGER_OFFSET}
+```
+
+```
+$LEDGER_OFFSET=$( `
+  curl --silent "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/ledger-end" `
+    | jq --raw-output .offset `
+); echo ${LEDGER_OFFSET}
+```
+
+**Get** the active contracts over Ledger API (bash, pwsh):
 
 ```
 echo '
 {
   "verbose": "true",
-  "active_at_offset": "${LEDGER_OFFSET}",
+  "active_at_offset": "'${LEDGER_OFFSET}'",
   "filter": {
     "filters_by_party": {
-      "${PARTY_ID}": {}
+      "'${ALICE_PARTY}'": {}
     }
   }
 }
-' | grpcurl -plaintext -d @ "${LEDGER_HOST}:${LEDGER_PORT}" \
+' | grpcurl -plaintext -d @ \
+      -H "Authorization: Bearer ${ALICE_TOKEN}" \
+      "${LEDGER_HOST}:${LEDGER_PORT}" \
       com.daml.ledger.api.v2.StateService.GetActiveContracts \
-  | tee actives.json
+  | jq \
+  | tee actives.json \
+  | jq
 ```
 
 ```
@@ -577,7 +907,7 @@ echo '
   "active_at_offset": "${LEDGER_OFFSET}",
   "filter": {
     "filters_by_party": {
-      "${PARTY_ID}": {}
+      "${ALICE_PARTY}": {}
     }
   }
 }
@@ -587,7 +917,107 @@ grpcurl -plaintext -d `@ "${LEDGER_HOST}:${LEDGER_PORT}" `
   | Tee-Object -FilePath "actives.json"
 ```
 
-#### Get the active contracts for a given template (bash, pwsh):
+**Get** the active contracts over Ledger JSON API, using websocat (bash, pwsh):
+
+```
+echo '
+{
+  "verbose": true,
+  "activeAtOffset": "'${LEDGER_OFFSET}'",
+  "filter": {
+    "filtersByParty" : {
+      "'${ALICE_PARTY}'": {
+        "cumulative": []
+      }
+    }
+  }
+}
+' | jq --compact-output \
+  | websocat \
+     --header "Authorization: Bearer ${ALICE_TOKEN}" \
+     -n1 \
+     ws://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/active-contracts \
+  | jq \
+  | tee actives.json \
+  | jq
+```
+
+```
+@"
+{
+  "verbose": true,
+  "activeAtOffset": "${LEDGER_OFFSET}",
+  "filter": {
+    "filtersByParty" : {
+      "'${ALICE_PARTY}'": {
+        "cumulative": []
+      }
+    }
+  }
+}
+"@ | jq --compact-output `
+   | websocat -n1 ws://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/active-contracts `
+   | jq `
+   | Tee-Object -FilePath "actives.json"
+```
+
+**Get** the active contracts Ledger JSON API, using curl (bash, pwsh):
+
+TODO: fix, based on
+https://discuss.daml.com/t/permission-denied-claims-do-not-authorize-to-read-data-as-any-party-super-reader-wildcard/7864?u=wallacekelly
+
+```
+echo '
+{
+  "verbose": true,
+  "activeAtOffset": "'${LEDGER_OFFSET}'",
+  "filter": {
+    "filtersByParty" : {
+      "'${ALICE_PARTY}'": {
+        "cumulative": []
+      }
+    }
+  }
+}
+' | jq --compact-output \
+  | curl --silent --json @- \
+     --oauth2-bearer ${ALICE_TOKEN} \
+     "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/active-contracts" \
+  | jq \
+  | tee actives.json \
+  | jq
+```
+
+```
+@"
+{
+  "verbose": true,
+  "activeAtOffset": "${LEDGER_OFFSET}",
+  "filter": {
+    "filtersByParty": {},
+    "filtersForAnyParty": {
+      "cumulative": [
+        {
+          "identifierFilter": {
+            "WildcardFilter": {
+              "value": {
+                "includeCreatedEventBlob": true
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+"@ | jq --compact-output `
+   | curl --silent --json `@- "http://${LEDGER_HOST}:${LEDGER_JSON}/v2/state/active-contracts" `
+   | jq `
+   | Tee-Object -FilePath "actives.json" `
+   | jq
+```
+
+**Get** the active contracts for a given template using Ledger API (bash, pwsh):
 
 ```
 export PACKAGE_ID=#ledger-api-samples
@@ -599,17 +1029,17 @@ export ENTITY_NAME=Asset
 echo '
 {
   "verbose": true,
-  "active_at_offset": "${LEDGER_OFFSET}",
+  "active_at_offset": "'${LEDGER_OFFSET}'",
   "filter": {
     "filters_by_party": {
-      "${PARTY_ID}": {
+      "'${ALICE_PARTY}'": {
         "cumulative": [
           {
             "template_filter": {
               "template_id": {
-                "package_id": "${PACKAGE_ID}",
-                "module_name": "${MODULE_NAME}",
-                "entity_name": "${ENTITY_NAME}"
+                "package_id": "'${PACKAGE_ID}'",
+                "module_name": "'${MODULE_NAME}'",
+                "entity_name": "'${ENTITY_NAME}'"
               }
             }
           }
@@ -619,9 +1049,13 @@ echo '
   }
 }
 ' |
-  grpcurl -plaintext -d @ "${LEDGER_HOST}:${LEDGER_PORT}" \
-    com.daml.ledger.api.v2.StateService.GetActiveContracts \
-    | jq
+  grpcurl -plaintext -d @ \
+      -H "Authorization: Bearer ${ALICE_TOKEN}" \
+      "${LEDGER_HOST}:${LEDGER_PORT}" \
+      com.daml.ledger.api.v2.StateService.GetActiveContracts \
+  | jq \
+  | tee actives.json \
+  | jq
 ```
 
 ```
@@ -637,7 +1071,7 @@ $ENTITY_NAME = "Asset"
     "active_at_offset": "${LEDGER_OFFSET}",
     "filter": {
       "filters_by_party": {
-        "${PARTY_ID}": {
+        "${ALICE_PARTY}": {
           "cumulative": [
             {
               "template_filter": {
@@ -659,13 +1093,153 @@ grpcurl -plaintext -d `@ "${LEDGER_HOST}:${LEDGER_PORT}" `
   | jq
 ```
 
+## Read contracts for all parties (bash, pwsh)
+
+1. Allocate a party `bob`.
+1. Create a user `bob`.
+1. Add the `CanReadAsAnyParty` right.
+1. Get a token for `bob`.
+1. Read the contracts of `alice`, passing a token for `bob`.
+
+```
+echo '
+{
+  "party_id_hint": "bob"
+}
+' | grpcurl -plaintext -d @ \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${LEDGER_HOST}:${LEDGER_PORT}" \
+      com.daml.ledger.api.v2.admin.PartyManagementService.AllocateParty \
+  | jq
+```
+
+
+## gRPC Reflection
+
+**List** the available gRPC services (bash, pwsh):
+
+```
+grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
+  list
+```
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
+  list
+```
+
+**List** the methods on a gRPC service (bash, pwsh):
+
+```
+grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
+  list com.daml.ledger.api.v2.StateService
+```
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
+  list com.daml.ledger.api.v2.StateService
+```
+
+**Describe** the methods on a gRPC service (bash, pwsh):
+
+```
+grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
+  describe com.daml.ledger.api.v2.StateService.GetActiveContracts
+```
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
+  describe com.daml.ledger.api.v2.StateService.GetActiveContracts
+```
+
+**Describe** a gRPC message (bash, pwsh):
+
+```
+grpcurl -plaintext ${LEDGER_HOST}:${LEDGER_PORT} \
+  describe com.daml.ledger.api.v2.GetActiveContractsRequest
+```
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
+  describe com.daml.ledger.api.v2.GetActiveContractsRequest
+```
+
+## Miscellaneous
+
+Get the ledger version information with gRPC (bash, pwsh):
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" \
+  com.daml.ledger.api.v2.VersionService.GetLedgerApiVersion
+```
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_PORT}" `
+  com.daml.ledger.api.v2.VersionService.GetLedgerApiVersion
+```
+
+**Get** the participant status from the Admin API (bash, pwsh):
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" \
+  com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus
+```
+
+```
+grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" `
+  com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## TODO
 
+* Switch to a 3.3 snapshot
+* Replace command-ids with GUIDs
+* Write jq functions one instruction per line
+* Finish the current set of examples
+* Alice with Ledger API
+* Bob with Ledger JSON API
+* Bob can_read_as_any_party
+* Add an exercise example
+* Consistent quote characters
+* Consistent indents
+* Consistent header styles
+* Consistent heading capitalization
+* Best practice for bash?
+* "Get" vs. "List"
+* Double-check that the correct token is used.
+* Add `--location` option
+* Provide alternative, default JWT for non-auth situations
 * Include a JWT on every call, defaulting to the default one.
 * Surround strings and URLs with quotes
 * Replace option shorthands (e.g., `curl --silent`)
 * Make sure all file output is `tee`'d.
 * Combine JSON and gRPC commands, with a table before each sample?
 * Table of contents with links
-* Test on an auth-enabled ledger
+* All variables are surrounded with braces `\$(?!{)[A-Z_]+(?!})`
+* Test on an auth-enabled ledger (bash, pwsh)
+* Test on a non-auth-enabled ledger (bash, pwsh)
+* Add sample output
 * Provide an example for every endpoint.
+* Create an interactive webpage
+  * Display all the examples, with navigation
+  * Filter by search string
+  * Filter by Ledger API, Ledger JSON API, curl, websocat, grpcurl, Daml Assistant, etc.
+  * Search results include dependent environment variables
