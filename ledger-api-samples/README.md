@@ -605,7 +605,7 @@ echo ${ALICE_TOKEN} `
 
 ```
 export DAR_FILE=$(base64 --wrap 0 \
-    .daml/dist/ledger-api-samples-0.0.1.dar \
+    --input .daml/dist/ledger-api-samples-0.0.1.dar \
   )
 ```
 
@@ -765,6 +765,14 @@ echo '
                 "value": {
                   "text": "my asset"
                 }
+              },
+              {
+                "label": "category",
+                "value": {
+                  "enum": {
+                    "constructor": "Stock"
+                  }
+                }
               }
             ]
           }
@@ -804,7 +812,8 @@ echo '
         "create_arguments": {
           "issuer": "'${BOB_PARTY}'",
           "owner": "'${BOB_PARTY}'",
-          "name": "my asset"
+          "name": "my asset",
+          "category": "Stock"
         }
       }
     }
