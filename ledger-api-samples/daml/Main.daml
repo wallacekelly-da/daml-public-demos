@@ -2,11 +2,15 @@ module Main where
 
 type AssetId = ContractId Asset
 
+data Category = Cash | Stock
+  deriving (Eq, Show)
+
 template Asset
   with
     issuer : Party
     owner  : Party
     name   : Text
+    category : Category
   where
     ensure name /= ""
     signatory issuer
