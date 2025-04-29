@@ -1,0 +1,26 @@
+// with help from https://github.com/DACH-NY/canton-network-node/blob/main/cluster/images/canton-domain/bootstrap.sc
+
+import com.digitalasset.canton.console.LocalInstanceReference
+import com.digitalasset.canton.domain.config.DomainParametersConfig
+import com.digitalasset.canton.version.ProtocolVersion
+
+val sequencer = sequencers.local.head
+val mediator = mediators.local.head
+val participant = participants.local.head
+
+def staticParameters(sequencer: LocalInstanceReference) =
+  DomainParametersConfig(alphaVersionSupport = true)
+    .toStaticDomainParameters(sequencer.config.crypto, ProtocolVersion.v32)
+    .map(StaticDomainParameters(_))
+    .getOrElse(sys.error("Getting staticParameters failed."))
+
+com.digitalasset.canton.console.EnterpriseConsoleMacros.bootstrap.domain(
+  "domain",
+  domainOwners = Seq(sequencer),
+  sequencers = Seq(sequencer),
+  mediators = Seq(mediator),
+  domainThreshold = PositiveInt.one,
+  staticDomainParameters = staticParameters(sequencer)
+)
+
+participant.domains.connect(sequencer, "domain")
