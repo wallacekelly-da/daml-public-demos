@@ -5,7 +5,11 @@ services:
     image: digitalasset-docker.jfrog.io/canton-enterprise:3.2.0-snapshot.20241217.14528.0.v538e5faf
     volumes:
       - ./configs:/canton/host/configs
-    command: daemon --config "/canton/host/configs/canton.conf" --bootstrap "/canton/host/configs/bootstrap.canton" --log-profile container
+    command: >
+      daemon
+      --config "/canton/host/configs/canton.conf"
+      --bootstrap "/canton/host/configs/bootstrap.canton"
+      --log-profile container
     expose:
       - 5001
       - 5002
@@ -21,4 +25,8 @@ services:
     image: digitalasset-docker.jfrog.io/canton-enterprise:3.2.0-snapshot.20241217.14528.0.v538e5faf
     volumes:
       - ./configs:/canton/host/configs
-    command: --no-tty --config "/canton/host/configs/console.conf" --log-profile container --log-level-root WARN
+    command: >
+      --no-tty
+      --config "/canton/host/configs/console.conf"
+      --log-profile container
+      --log-level-root WARN
