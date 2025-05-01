@@ -468,7 +468,17 @@ TODO: pwsh
 
 **List** the users with Ledger API (bash, pwsh):
 
-TODO
+```
+grpcurl --plaintext \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  ${LEDGER_HOST}:${LEDGER_PORT} \
+  com.daml.ledger.api.v2.admin.UserManagementService/ListUsers \
+| jq --raw-output '
+    .users[]
+    | { id, primary_party }'
+```
+
+TODO: pwsh
 
 **List** the users with Ledger JSON API (bash, pwsh):
 
@@ -509,7 +519,7 @@ echo '
   | jq
 ```
 
-TODO
+TODO: pwsh
 
 **Grant** a user's rights using Ledger JSON API (bash, pwsh):
 
@@ -541,7 +551,20 @@ TODO: pwsh
 
 **List** a user's rights using Ledger API (bash, pwsh):
 
-TODO
+```
+echo '
+{
+  "user_id": "'${ALICE_USERID}'"
+}
+' | jq --compact-output \
+  | grpcurl --plaintext -d @ \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${LEDGER_HOST}:${LEDGER_PORT}" \
+      com.daml.ledger.api.v2.admin.UserManagementService/ListUserRights \
+  | jq
+```
+
+TODO: pwsh
 
 **List** a user's rights using Ledger JSON API (bash, pwsh):
 
@@ -605,9 +628,11 @@ echo ${ALICE_TOKEN} `
 
 ```
 export DAR_FILE=$(base64 --wrap 0 \
-    --input .daml/dist/ledger-api-samples-0.0.1.dar \
+    .daml/dist/ledger-api-samples-0.0.1.dar \
   )
 ```
+
+TODO: pwsh
 
 **Upload** a DAR file using the Ledger API (bash, pwsh):
 
@@ -626,7 +651,13 @@ TODO: pwsh
 
 **Upload** a DAR file using the Ledger JSON API (bash, pwsh):
 
-TODO
+TODO: bash
+
+```
+
+```
+
+TODO: pwsh
 
 **Get** the main package id for a given DAR (bash, pwsh):
 
@@ -1121,7 +1152,6 @@ echo '
       com.daml.ledger.api.v2.admin.PartyManagementService.AllocateParty \
   | jq
 ```
-
 
 ## gRPC Reflection
 
