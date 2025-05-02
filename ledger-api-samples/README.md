@@ -1153,6 +1153,69 @@ echo '
   | jq
 ```
 
+## Subscribe to updates
+
+**Subscribe** to transactions for a party with `websocat` (bash, pwsh):
+
+```
+echo '
+{
+  "verbose": true,
+  "beginExclusive": "0",
+  "filter": {
+    "filtersByParty" : {
+      "'${ALICE_PARTY}'": {
+        "cumulative": []
+      }
+    }
+  }
+}
+' | jq --compact-output \
+  | websocat \
+     --header "Authorization: Bearer ${ALICE_TOKEN}" \
+     -n1 \
+     ws://${LEDGER_HOST}:${LEDGER_JSON}/v2/updates/flats \
+  | jq
+```
+
+TODO: pwsh
+
+**Subscribe** to transactions of a template with `websocat` (bash, pwsh):
+
+```
+echo '
+{
+  "verbose": false,
+  "beginExclusive": "0",
+  "filter": {
+    "filtersByParty" : {
+      "'${ALICE_PARTY}'": {
+        "cumulative": [
+          {
+            "identifierFilter": {
+              "TemplateFilter": {
+                "value": {
+                  "includeCreatedEventBlob": false,
+                  "templateId": "'${PACKAGE_ID}':'${MODULE_NAME}':'${ENTITY_NAME}'"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+' | jq --compact-output \
+  | websocat \
+     --header "Authorization: Bearer ${ALICE_TOKEN}" \
+     -n1 \
+     ws://${LEDGER_HOST}:${LEDGER_JSON}/v2/updates/flats \
+  | jq
+```
+
+TODO: pwsh
+
 ## gRPC Reflection
 
 **List** the available gRPC services (bash, pwsh):
