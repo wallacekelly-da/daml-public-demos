@@ -1292,6 +1292,14 @@ grpcurl -plaintext "${LEDGER_HOST}:${LEDGER_ADMIN}" `
   com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus
 ```
 
+**Open** a Canton Console into the ledger (bash, pwsh):
+
+Insert the result of `echo $ADMIN_TOKEN` into remote.conf.
+
+```
+daml canton-console --host localhost --port 6865 --admin-api-port 6866 --config remote.conf
+```
+
 
 
 
