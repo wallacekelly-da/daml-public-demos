@@ -24,7 +24,6 @@ git clone \
   --depth 1 \
   --branch ledger-api-samples \
   ledger-api-samples
-
 ```
 
 ```
@@ -1154,6 +1153,64 @@ echo '
 ```
 
 ## Subscribe to updates
+
+**Subscribe** to updates for a party with `grpcurl` (bash, pwsh):
+
+```
+echo '
+{
+  "begin_exclusive": 0,
+  "verbose": true,
+  "filter": {
+    "filters_by_party": {
+      "'${ALICE_PARTY}'": { }
+    }
+  }
+}
+' |
+  grpcurl -plaintext -d @ \
+      -H "Authorization: Bearer ${ALICE_TOKEN}" \
+      "${LEDGER_HOST}:${LEDGER_PORT}" \
+      com.daml.ledger.api.v2.UpdateService.GetUpdates \
+  | jq
+```
+
+TODO: pwsh
+
+**Subscribe** to updates of a specific template with `grpcurl` (bash, pwsh):
+
+```
+echo '
+{
+  "verbose": true,
+  "begin_exclusive": "0",
+  "filter": {
+    "filters_by_party": {
+      "'${ALICE_PARTY}'": {
+        "cumulative": [
+          {
+            "template_filter": {
+              "include_created_event_blob": true,
+              "template_id": {
+                "package_id": "'${PACKAGE_ID}'",
+                "module_name": "'${MODULE_NAME}'",
+                "entity_name": "'${ENTITY_NAME}'"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+' |
+  grpcurl -plaintext -d @ \
+      -H "Authorization: Bearer ${ALICE_TOKEN}" \
+      "${LEDGER_HOST}:${LEDGER_PORT}" \
+      com.daml.ledger.api.v2.UpdateService.GetUpdates \
+  | jq
+```
+
 
 **Subscribe** to transactions for a party with `websocat` (bash, pwsh):
 
