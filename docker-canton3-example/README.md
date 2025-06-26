@@ -30,3 +30,7 @@ This illustrates a minimal Docker Compose for the following:
     ```
     docker compose run -it --rm console
     ```
+
+    ```
+    participant.health.status
+    ```
