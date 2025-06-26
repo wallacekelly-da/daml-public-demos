@@ -2,7 +2,7 @@ services:
 
   canton:
     container_name: canton
-    image: digitalasset-docker.jfrog.io/canton-enterprise:3.3.0-snapshot.20250425.15794.0.v8777d491
+    image: digitalasset-docker.jfrog.io/canton-enterprise:3.3.0-snapshot.20250624.15984.0.v1faad195
     volumes:
       - ./configs:/canton/host/configs
     command: >
@@ -22,7 +22,7 @@ services:
 
   console:
     container_name: console
-    image: digitalasset-docker.jfrog.io/canton-enterprise:3.3.0-snapshot.20250425.15794.0.v8777d491
+    image: digitalasset-docker.jfrog.io/canton-enterprise:3.3.0-snapshot.20250624.15984.0.v1faad195
     volumes:
       - ./configs:/canton/host/configs
     command: >
