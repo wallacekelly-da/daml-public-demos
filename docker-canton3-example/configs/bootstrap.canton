@@ -1,7 +1,8 @@
 // with help from https://github.com/DACH-NY/canton-network-node/blob/main/cluster/images/canton-domain/bootstrap.sc
 
 import com.digitalasset.canton.console.LocalInstanceReference
-import com.digitalasset.canton.domain.config.DomainParametersConfig
+import com.digitalasset.canton.synchronizer.config.SynchronizerParametersConfig
+import com.digitalasset.canton.admin.api.client.data.StaticSynchronizerParameters
 import com.digitalasset.canton.version.ProtocolVersion
 
 val sequencer = sequencers.local.head
@@ -9,18 +10,18 @@ val mediator = mediators.local.head
 val participant = participants.local.head
 
 def staticParameters(sequencer: LocalInstanceReference) =
-  DomainParametersConfig(alphaVersionSupport = true)
-    .toStaticDomainParameters(sequencer.config.crypto, ProtocolVersion.v32)
-    .map(StaticDomainParameters(_))
+  SynchronizerParametersConfig(alphaVersionSupport = true)
+    .toStaticSynchronizerParameters(sequencer.config.crypto, ProtocolVersion.v33)
+    .map(StaticSynchronizerParameters(_))
     .getOrElse(sys.error("Getting staticParameters failed."))
 
-com.digitalasset.canton.console.EnterpriseConsoleMacros.bootstrap.domain(
+bootstrap.synchronizer(
   "domain",
-  domainOwners = Seq(sequencer),
+  synchronizerOwners = Seq(sequencer),
   sequencers = Seq(sequencer),
   mediators = Seq(mediator),
-  domainThreshold = PositiveInt.one,
-  staticDomainParameters = staticParameters(sequencer)
+  synchronizerThreshold = PositiveInt.one,
+  staticSynchronizerParameters = staticParameters(sequencer)
 )
 
-participant.domains.connect(sequencer, "domain")
+participant.synchronizers.connect(sequencer, "domain")
