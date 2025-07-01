@@ -1,4 +1,4 @@
-// with help from https://github.com/DACH-NY/canton-network-node/blob/main/cluster/images/canton-domain/bootstrap.sc
+import $file.common
 
 import com.digitalasset.canton.console.LocalInstanceReference
 import com.digitalasset.canton.synchronizer.config.SynchronizerParametersConfig
@@ -8,6 +8,8 @@ import com.digitalasset.canton.version.ProtocolVersion
 val sequencer = sequencers.local.head
 val mediator = mediators.local.head
 val participant = participants.local.head
+
+// with help from https://github.com/DACH-NY/canton-network-node/blob/main/cluster/images/canton-domain/bootstrap.sc
 
 def staticParameters(sequencer: LocalInstanceReference) =
   SynchronizerParametersConfig(alphaVersionSupport = true)
@@ -25,3 +27,13 @@ bootstrap.synchronizer(
 )
 
 participant.synchronizers.connect(sequencer, "domain")
+
+val aliceParty = common.enableOrGetParty(participant, "alice")
+val aliceUser = common.createOrGetUser(participant, "alice", aliceParty, true, "Alice Jones")
+
+val bobParty = common.enableOrGetParty(participant, "bob")
+val bobUser = common.createOrGetUser(participant, "bob", bobParty, false, "Bob Smith")
+
+common.writeParticipantId(participant)
+common.writePartyId(participant, aliceParty)
+common.writePartyId(participant, bobParty)
