@@ -41,7 +41,7 @@ This is helpful for testing and diagnostics of auth-related issues.
     ```
     daml sandbox \
       --log-level-canton DEBUG \
-      --config sandbox.conf
+      --config sandbox3.conf
     ```
 
     Confirm its health:
@@ -53,22 +53,22 @@ This is helpful for testing and diagnostics of auth-related issues.
 1. **Get** the participant id from the Admin API:
 
     <!-- Canton 2.x -->
-    ```
+    <!-- ```
     export PARTICIPANT_ID=$( \
       grpcurl -plaintext localhost:6866 \
       com.digitalasset.canton.health.admin.v0.StatusService.Status \
         | jq -r '.success.id' )
     echo $PARTICIPANT_ID
-    ```
+    ``` -->
 
     <!-- Canton 3.x -->
-    <!-- ```
+    ```
     export PARTICIPANT_ID=$( \
       grpcurl -plaintext localhost:6866 \
         com.digitalasset.canton.admin.participant.v30.ParticipantStatusService.ParticipantStatus \
           | jq -r '.status.commonStatus.uid' )
     echo $PARTICIPANT_ID
-    ``` -->
+    ```
 
 1. **Show** that a token is required to list the packages:
 
@@ -99,7 +99,8 @@ This is helpful for testing and diagnostics of auth-related issues.
         --data-urlencode 'client_secret=secret' \
         --data-urlencode 'participant_id='"$PARTICIPANT_ID" \
           | jq -r '.access_token')
-    echo $ADMIN_TOKEN
+    echo $ADMIN_TOKEN > at.jwt; \
+    cat at.jwt
     ```
 
 1. **List** the packages successfully _with a token_:
@@ -114,4 +115,19 @@ This is helpful for testing and diagnostics of auth-related issues.
 
     ```
     sandbox.ledger_api.packages.list()
+    ```
+
+1. **Run** a script:
+
+    ```
+    daml build
+    ```
+    
+    ```
+    daml script \
+      --dar .daml/dist/mockauth-0.0.1.dar \
+      --script-name Main:setup \
+      --ledger-host localhost \
+      --ledger-port 6865 \
+      --access-token-file at.jwt
     ```
