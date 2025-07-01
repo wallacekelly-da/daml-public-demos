@@ -131,3 +131,15 @@ This is helpful for testing and diagnostics of auth-related issues.
       --ledger-port 6865 \
       --access-token-file at.jwt
     ```
+
+1. **Call** the JSON Ledger API:
+
+    ```
+    curl --location 'http://localhost:7575/v2/parties' \
+      --header 'Content-Type: application/json' \
+      --header 'Authorization: Bearer '"$ADMIN_TOKEN" \ 
+      --data '{
+        "partyIdHint": "David",
+        "identityProviderId": ""
+      }'
+    ```
